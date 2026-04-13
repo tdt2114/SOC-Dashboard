@@ -1,0 +1,48 @@
+services:
+  soc-postgres:
+    image: postgres:16-alpine
+    container_name: soc-postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-soc_dashboard}
+      POSTGRES_USER: ${POSTGRES_USER:-soc_dashboard}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-soc_dashboard_dev}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-soc_dashboard} -d ${POSTGRES_DB:-soc_dashboard}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "5432:5432"
+    volumes:
+      - soc-postgres-data:/var/lib/postgresql/data
+
+  soc-backend:
+    build:
+      context: ./backend
+    container_name: soc-backend
+    env_file:
+      - .env
+    depends_on:
+      soc-postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  soc-frontend:
+    build:
+      context: ./frontend
+    container_name: soc-frontend
+    environment:
+      API_BASE_URL: http://soc-backend:8000
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:8000
+    depends_on:
+      - soc-backend
+    ports:
+      - "3000:3000"
+
+volumes:
+  soc-postgres-data:
