@@ -37,6 +37,13 @@ class WazuhApiClient:
         ]
         return AgentListResponse(items=items, total=len(items))
 
+    async def get_agent(self, agent_id: str) -> AgentListItem | None:
+        agents = await self.list_agents(status=None, query_text=None)
+        for item in agents.items:
+            if item.id == agent_id:
+                return item
+        return None
+
     async def _authenticate(self) -> str:
         try:
             async with httpx.AsyncClient(

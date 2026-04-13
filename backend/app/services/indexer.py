@@ -24,6 +24,7 @@ class IndexerClient:
         page_size: int,
         time_range: str,
         severity: str | None,
+        agent_id: str | None,
         agent_name: str | None,
         rule_id: str | None,
         query_text: str | None,
@@ -32,6 +33,7 @@ class IndexerClient:
         body = self._build_search_body(
             time_range=time_range,
             severity=severity,
+            agent_id=agent_id,
             agent_name=agent_name,
             rule_id=rule_id,
             query_text=query_text,
@@ -91,6 +93,7 @@ class IndexerClient:
         *,
         time_range: str,
         severity: str | None,
+        agent_id: str | None,
         agent_name: str | None,
         rule_id: str | None,
         query_text: str | None,
@@ -120,6 +123,20 @@ class IndexerClient:
                         "should": [
                             {"term": {"agent.name.keyword": agent_name}},
                             {"match_phrase": {"agent.name": agent_name}},
+                        ],
+                        "minimum_should_match": 1,
+                    }
+                }
+            )
+
+        if agent_id:
+            must_filters.append(
+                {
+                    "bool": {
+                        "should": [
+                            {"term": {"agent.id": agent_id}},
+                            {"term": {"agent.id.keyword": agent_id}},
+                            {"match_phrase": {"agent.id": agent_id}},
                         ],
                         "minimum_should_match": 1,
                     }

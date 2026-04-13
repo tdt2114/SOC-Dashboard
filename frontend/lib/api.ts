@@ -1,4 +1,4 @@
-import { AgentListResponse, AlertDetail, AlertListResponse } from "@/lib/types";
+import { AgentDetailResponse, AgentListResponse, AlertDetail, AlertListResponse } from "@/lib/types";
 
 const API_BASE_URL =
   process.env.API_BASE_URL ||
@@ -34,6 +34,7 @@ export async function getAlerts(params: {
   page_size?: number;
   time_range?: string;
   severity?: string;
+  agent_id?: string;
   agent_name?: string;
   rule_id?: string;
   q?: string;
@@ -50,4 +51,8 @@ export async function getAgents(params: {
   q?: string;
 }): Promise<AgentListResponse> {
   return fetchJson<AgentListResponse>(`/api/agents${toSearchParams(params)}`);
+}
+
+export async function getAgent(id: string): Promise<AgentDetailResponse> {
+  return fetchJson<AgentDetailResponse>(`/api/agents/${encodeURIComponent(id)}`);
 }

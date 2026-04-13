@@ -1,6 +1,13 @@
 import { cookies } from "next/headers";
 
-import { AuditLogListResponse, AuthLoginResponse, AuthUser, UserAdminListResponse } from "@/lib/types";
+import {
+  AlertWorkflowResponse,
+  AuditLogListResponse,
+  AuthLoginResponse,
+  AuthUser,
+  NotificationListResponse,
+  UserAdminListResponse
+} from "@/lib/types";
 
 const API_BASE_URL =
   process.env.API_BASE_URL ||
@@ -164,6 +171,57 @@ export async function getAuditLogsFromCookies(params: {
   const suffix = query.toString() ? `?${query.toString()}` : "";
   return authorizedJsonFetch<AuditLogListResponse>(`/api/audit-logs${suffix}`, {
     method: "GET"
+  });
+}
+
+export async function getAlertWorkflowFromCookies(alertId: string): Promise<AlertWorkflowResponse> {
+  return authorizedJsonFetch<AlertWorkflowResponse>(`/api/alerts/${encodeURIComponent(alertId)}/workflow`, {
+    method: "GET"
+  });
+}
+
+export async function assignAlertAgainstBackend(
+  alertId: string,
+  payload: {
+    assigned_user_id: number | null;
+  }
+): Promise<AlertWorkflowResponse> {
+  return authorizedJsonFetch<AlertWorkflowResponse>(
+    `/api/alerts/${encodeURIComponent(alertId)}/workflow/assignment`,
+    {
+      method: "PATCH",
+      body: JSON.stringify(payload)
+    }
+  );
+}
+
+export async function addAlertNoteAgainstBackend(
+  alertId: string,
+  payload: {
+    body: string;
+  }
+): Promise<AlertWorkflowResponse> {
+  return authorizedJsonFetch<AlertWorkflowResponse>(`/api/alerts/${encodeURIComponent(alertId)}/workflow/notes`, {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function getNotificationsFromCookies(): Promise<NotificationListResponse> {
+  return authorizedJsonFetch<NotificationListResponse>("/api/notifications", {
+    method: "GET"
+  });
+}
+
+export async function markNotificationReadAgainstBackend(notificationId: number): Promise<void> {
+  await authorizedVoidFetch(`/api/notifications/${notificationId}/read`, {
+    method: "POST"
+  });
+}
+
+export async function markAllNotificationsReadAgainstBackend(): Promise<void> {
+  await authorizedVoidFetch("/api/notifications/read-all", {
+    method: "POST"
   });
 }
 

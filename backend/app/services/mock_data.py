@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from app.core.severity import severity_label
-from app.schemas.agents import AgentListItem, AgentListResponse
+from app.schemas.agents import AgentDetailResponse, AgentListItem, AgentListResponse, AgentMonitoringContext
 from app.schemas.alerts import AlertAgent, AlertDetail, AlertFile, AlertListItem, AlertListResponse, AlertRule, AlertSource
 
 
@@ -66,6 +66,7 @@ class MockDataService:
         page_size: int,
         time_range: str,
         severity: str | None,
+        agent_id: str | None,
         agent_name: str | None,
         rule_id: str | None,
         query_text: str | None,
@@ -75,6 +76,8 @@ class MockDataService:
 
         if severity:
             items = [item for item in items if item.severity_label == severity]
+        if agent_id:
+            items = [item for item in items if item.agent.id == agent_id]
         if agent_name:
             needle = agent_name.lower()
             items = [item for item in items if (item.agent.name or "").lower() == needle]
@@ -124,3 +127,38 @@ class MockDataService:
             needle = query_text.lower()
             items = [item for item in items if needle in (item.name or "").lower()]
         return AgentListResponse(items=items, total=len(items))
+
+    async def get_agent(self, agent_id: str) -> AgentListItem | None:
+        for item in MOCK_AGENTS:
+            if item.id == agent_id:
+                return item
+        return None
+
+    async def get_agent_detail(self, agent_id: str) -> AgentDetailResponse | None:
+        agent = await self.get_agent(agent_id)
+        if agent is None:
+            return None
+
+        alerts = [item for item in MOCK_ALERTS if item.agent.id == agent_id]
+        high_or_critical = [item for item in alerts if item.severity_label in {"high", "critical"}]
+        recent_alerts = [
+            AlertListItem(
+                id=item.id,
+                timestamp=item.timestamp,
+                severity_label=item.severity_label,
+                agent=item.agent,
+                rule=item.rule,
+                source=item.source,
+                file=item.file,
+            )
+            for item in alerts[:5]
+        ]
+        return AgentDetailResponse(
+            agent=agent,
+            recent_alerts=recent_alerts,
+            monitoring_context=AgentMonitoringContext(
+                total_alerts_24h=len(alerts),
+                high_or_critical_alerts_24h=len(high_or_critical),
+                status=agent.status,
+            ),
+        )

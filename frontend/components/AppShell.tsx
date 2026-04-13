@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { ReactNode } from "react";
 
 import { AuthUser } from "@/lib/types";
+import { NotificationBell } from "@/components/NotificationBell";
+import { SidebarNavLink } from "@/components/SidebarNavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserDropdown } from "@/components/UserDropdown";
 
@@ -38,9 +39,7 @@ export function AppShell({
         </div>
         <nav className="nav">
           {navItems.map((item) => (
-            <Link key={item.href} href={item.href} className="nav-link">
-              {item.label}
-            </Link>
+            <SidebarNavLink key={item.href} href={item.href} label={item.label} />
           ))}
         </nav>
         <p className="sidebar-note">
@@ -55,6 +54,7 @@ export function AppShell({
             <h2>{title}</h2>
           </div>
           <div className="header-actions">
+            {currentUser ? <NotificationBell /> : null}
             <ThemeToggle />
             {currentUser ? <UserDropdown currentUser={currentUser} /> : null}
           </div>

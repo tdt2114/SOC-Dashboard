@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
@@ -82,14 +83,28 @@ export default async function AgentsPage({
               <tbody>
                 {result?.items.map((item) => (
                   <tr key={item.id}>
-                    <td>{item.id}</td>
-                    <td>{item.name || "N/A"}</td>
                     <td>
-                      <span className={`status-pill status-${(item.status || "unknown").toLowerCase()}`}>
-                        {item.status || "unknown"}
-                      </span>
+                      <Link href={`/agents/${encodeURIComponent(item.id)}`} className="table-row-link">
+                        {item.id}
+                      </Link>
                     </td>
-                    <td>{item.last_keepalive || "N/A"}</td>
+                    <td>
+                      <Link href={`/agents/${encodeURIComponent(item.id)}`} className="table-row-link">
+                        {item.name || "N/A"}
+                      </Link>
+                    </td>
+                    <td>
+                      <Link href={`/agents/${encodeURIComponent(item.id)}`} className="table-row-link">
+                        <span className={`status-pill status-${(item.status || "unknown").toLowerCase()}`}>
+                          {item.status || "unknown"}
+                        </span>
+                      </Link>
+                    </td>
+                    <td>
+                      <Link href={`/agents/${encodeURIComponent(item.id)}`} className="table-row-link">
+                        {item.last_keepalive || "N/A"}
+                      </Link>
+                    </td>
                   </tr>
                 ))}
               </tbody>

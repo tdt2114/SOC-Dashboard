@@ -25,6 +25,51 @@ export interface AlertDetail extends AlertListItem {
   raw: Record<string, unknown>;
 }
 
+export interface AlertWorkflowUserOption {
+  id: number;
+  username: string;
+  full_name: string | null;
+}
+
+export interface AlertAssignmentInfo {
+  user_id: number | null;
+  username: string | null;
+  full_name: string | null;
+  updated_at: string | null;
+}
+
+export interface AlertNoteInfo {
+  id: number;
+  author_user_id: number;
+  author_username: string;
+  author_full_name: string | null;
+  body: string;
+  created_at: string;
+}
+
+export interface AlertWorkflowResponse {
+  alert_id: string;
+  assignee: AlertAssignmentInfo;
+  assignee_options: AlertWorkflowUserOption[];
+  notes: AlertNoteInfo[];
+}
+
+export interface NotificationItem {
+  id: number;
+  type: string;
+  title: string;
+  body: string;
+  link_url: string | null;
+  is_read: boolean;
+  created_at: string;
+  read_at: string | null;
+}
+
+export interface NotificationListResponse {
+  items: NotificationItem[];
+  unread_count: number;
+}
+
 export interface AlertListResponse {
   items: AlertListItem[];
   page: number;
@@ -37,11 +82,24 @@ export interface AgentListItem {
   name: string | null;
   status: string | null;
   last_keepalive: string | null;
+  platform?: string | null;
 }
 
 export interface AgentListResponse {
   items: AgentListItem[];
   total: number;
+}
+
+export interface AgentMonitoringContext {
+  total_alerts_24h: number;
+  high_or_critical_alerts_24h: number;
+  status: string | null;
+}
+
+export interface AgentDetailResponse {
+  agent: AgentListItem;
+  recent_alerts: AlertListItem[];
+  monitoring_context: AgentMonitoringContext;
 }
 
 export interface AuthUser {
