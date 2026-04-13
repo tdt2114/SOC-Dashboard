@@ -54,6 +54,16 @@ async def get_agent(
             rule_id=None,
             query_text=None,
         )
+        total_alerts_24h = await indexer_client.search_alerts(
+            page=1,
+            page_size=1,
+            time_range="24h",
+            severity=None,
+            agent_id=agent_id,
+            agent_name=None,
+            rule_id=None,
+            query_text=None,
+        )
         high_alerts = await indexer_client.search_alerts(
             page=1,
             page_size=1,
@@ -81,7 +91,7 @@ async def get_agent(
         agent=agent,
         recent_alerts=recent_alerts.items,
         monitoring_context={
-            "total_alerts_24h": recent_alerts.total,
+            "total_alerts_24h": total_alerts_24h.total,
             "high_or_critical_alerts_24h": high_alerts.total + critical_alerts.total,
             "status": agent.status,
         },

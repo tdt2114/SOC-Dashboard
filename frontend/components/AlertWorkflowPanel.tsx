@@ -32,6 +32,8 @@ export function AlertWorkflowPanel({
   initialWorkflow: AlertWorkflowResponse;
 }) {
   const router = useRouter();
+  const canManageWorkflow =
+    currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
   const [workflow, setWorkflow] = useState(initialWorkflow);
   const [assignedUserId, setAssignedUserId] = useState(
     initialWorkflow.assignee.user_id ? String(initialWorkflow.assignee.user_id) : ""
@@ -136,7 +138,11 @@ export function AlertWorkflowPanel({
           <form className="stack-form" onSubmit={handleAssign}>
             <label>
               <span>Assign To</span>
-              <select value={assignedUserId} onChange={(event) => setAssignedUserId(event.target.value)}>
+              <select
+                value={assignedUserId}
+                onChange={(event) => setAssignedUserId(event.target.value)}
+                disabled={!canManageWorkflow}
+              >
                 <option value="">Unassigned</option>
                 {workflow.assignee_options.map((option) => (
                   <option key={option.id} value={option.id}>
@@ -145,9 +151,12 @@ export function AlertWorkflowPanel({
                 ))}
               </select>
             </label>
+            {!canManageWorkflow ? (
+              <p className="inline-empty">Analyst or admin access is required to change alert ownership.</p>
+            ) : null}
             {assignError ? <p className="form-error">{assignError}</p> : null}
             {assignMessage ? <p className="form-success">{assignMessage}</p> : null}
-            <button type="submit" disabled={isAssigning}>
+            <button type="submit" disabled={isAssigning || !canManageWorkflow}>
               {isAssigning ? "Saving..." : "Save Assignee"}
             </button>
           </form>
@@ -169,12 +178,16 @@ export function AlertWorkflowPanel({
                 placeholder="Write a concise investigation note..."
                 minLength={1}
                 maxLength={4000}
+                disabled={!canManageWorkflow}
                 required
               />
             </label>
+            {!canManageWorkflow ? (
+              <p className="inline-empty">Analyst or admin access is required to add investigation notes.</p>
+            ) : null}
             {noteError ? <p className="form-error">{noteError}</p> : null}
             {noteMessage ? <p className="form-success">{noteMessage}</p> : null}
-            <button type="submit" disabled={isSavingNote}>
+            <button type="submit" disabled={isSavingNote || !canManageWorkflow}>
               {isSavingNote ? "Saving..." : "Add Note"}
             </button>
           </form>

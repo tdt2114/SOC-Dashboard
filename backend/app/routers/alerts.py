@@ -11,11 +11,25 @@ from app.schemas.alerts import AlertDetail, AlertListResponse
 from app.schemas.alert_workflow import AlertAssignmentRequest, AlertNoteCreateRequest, AlertWorkflowResponse
 from app.services.indexer import IndexerClient
 from app.services.alert_workflow import add_alert_note, assign_alert, get_alert_workflow
-from app.services.auth import get_current_user_model_from_token
+from app.services.auth import WORKFLOW_ROLES, get_current_user_model_from_token, require_user_roles
 from app.services.mock_data import MockDataService
 
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 bearer_scheme = HTTPBearer(auto_error=False)
+
+
+def _get_alert_source_client(settings: Settings):
+    return MockDataService() if settings.mock_mode else IndexerClient(settings)
+
+
+async def _ensure_alert_exists(alert_id: str, settings: Settings) -> None:
+    client = _get_alert_source_client(settings)
+    try:
+        alert = await client.get_alert(alert_id)
+    except UpstreamServiceError as exc:
+        raise HTTPException(status_code=502, detail=f"{exc.service} unavailable: {exc.message}") from exc
+    if alert is None:
+        raise HTTPException(status_code=404, detail="Alert not found")
 
 
 @router.get("", response_model=AlertListResponse)
@@ -67,10 +81,12 @@ async def get_workflow(
     alert_id: str,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     session: AsyncSession = Depends(get_db_session),
+    settings: Settings = Depends(get_settings),
 ) -> AlertWorkflowResponse:
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     await get_current_user_model_from_token(session, credentials.credentials)
+    await _ensure_alert_exists(alert_id, settings)
     return await get_alert_workflow(session, alert_id)
 
 
@@ -80,10 +96,13 @@ async def update_assignment(
     payload: AlertAssignmentRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     session: AsyncSession = Depends(get_db_session),
+    settings: Settings = Depends(get_settings),
 ) -> AlertWorkflowResponse:
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     current_user = await get_current_user_model_from_token(session, credentials.credentials)
+    require_user_roles(current_user, WORKFLOW_ROLES, detail="Alert assignment requires analyst or admin access")
+    await _ensure_alert_exists(alert_id, settings)
     return await assign_alert(session, alert_id=alert_id, actor_user=current_user, payload=payload)
 
 
@@ -93,8 +112,11 @@ async def create_note(
     payload: AlertNoteCreateRequest,
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     session: AsyncSession = Depends(get_db_session),
+    settings: Settings = Depends(get_settings),
 ) -> AlertWorkflowResponse:
     if credentials is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     current_user = await get_current_user_model_from_token(session, credentials.credentials)
+    require_user_roles(current_user, WORKFLOW_ROLES, detail="Alert notes require analyst or admin access")
+    await _ensure_alert_exists(alert_id, settings)
     return await add_alert_note(session, alert_id=alert_id, actor_user=current_user, payload=payload)

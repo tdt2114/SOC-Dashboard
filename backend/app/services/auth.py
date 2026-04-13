@@ -21,6 +21,9 @@ from app.schemas.auth import AuthProfileUpdateRequest, AuthTokenResponse, AuthUs
 from app.services.audit import write_audit_log
 
 
+WORKFLOW_ROLES = {"analyst", "admin"}
+
+
 def serialize_user(user: User) -> AuthUserResponse:
     return AuthUserResponse(
         id=user.id,
@@ -177,6 +180,18 @@ async def get_current_user_model_from_token(session: AsyncSession, access_token:
     user = result.scalar_one_or_none()
     if user is None or not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not available")
+    return user
+
+
+def user_has_any_role(user: User, role_names: set[str]) -> bool:
+    if user.is_superuser:
+        return True
+    return any(item.role.name in role_names for item in user.roles)
+
+
+def require_user_roles(user: User, role_names: set[str], *, detail: str) -> User:
+    if not user_has_any_role(user, role_names):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=detail)
     return user
 
 

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.db.models import AlertAssignment, AlertNote, User
+from app.db.models import AlertAssignment, AlertNote, Role, User, UserRole
 from app.schemas.alert_workflow import (
     AlertAssignmentInfo,
     AlertAssignmentRequest,
@@ -14,6 +14,7 @@ from app.schemas.alert_workflow import (
     AlertWorkflowResponse,
     AlertWorkflowUserOption,
 )
+from app.services.auth import WORKFLOW_ROLES
 from app.services.audit import write_audit_log
 from app.services.notifications import create_notification
 
@@ -41,10 +42,19 @@ async def _load_assignment(session: AsyncSession, alert_id: str) -> AlertAssignm
 async def _load_active_users(session: AsyncSession) -> list[User]:
     result = await session.execute(
         select(User)
-        .where(User.is_active.is_(True))
+        .outerjoin(UserRole, UserRole.user_id == User.id)
+        .outerjoin(Role, Role.id == UserRole.role_id)
+        .where(
+            User.is_active.is_(True),
+            or_(
+                User.is_superuser.is_(True),
+                Role.name.in_(tuple(WORKFLOW_ROLES)),
+            ),
+        )
         .order_by(User.username.asc())
+        .options(selectinload(User.roles).selectinload(UserRole.role))
     )
-    return list(result.scalars().all())
+    return list(result.scalars().unique().all())
 
 
 async def _load_notes(session: AsyncSession, alert_id: str) -> list[AlertNote]:
@@ -93,9 +103,20 @@ async def assign_alert(
     assigned_user: User | None = None
     if payload.assigned_user_id is not None:
         result = await session.execute(
-            select(User).where(User.id == payload.assigned_user_id, User.is_active.is_(True))
+            select(User)
+            .outerjoin(UserRole, UserRole.user_id == User.id)
+            .outerjoin(Role, Role.id == UserRole.role_id)
+            .where(
+                User.id == payload.assigned_user_id,
+                User.is_active.is_(True),
+                or_(
+                    User.is_superuser.is_(True),
+                    Role.name.in_(tuple(WORKFLOW_ROLES)),
+                ),
+            )
+            .options(selectinload(User.roles).selectinload(UserRole.role))
         )
-        assigned_user = result.scalar_one_or_none()
+        assigned_user = result.scalars().unique().one_or_none()
         if assigned_user is None:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assigned user is invalid")
 
@@ -144,10 +165,14 @@ async def add_alert_note(
     actor_user: User,
     payload: AlertNoteCreateRequest,
 ) -> AlertWorkflowResponse:
+    note_body = payload.body.strip()
+    if not note_body:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Note body cannot be empty")
+
     note = AlertNote(
         alert_id=alert_id,
         author_user_id=actor_user.id,
-        body=payload.body.strip(),
+        body=note_body,
     )
     session.add(note)
     await session.flush()
