@@ -187,6 +187,7 @@ class IndexerClient:
         rule = source.get("rule", {}) or {}
         data = source.get("data", {}) or {}
         syscheck = source.get("syscheck", {}) or {}
+        nested_syscheck = data.get("syscheck", {}) if isinstance(data, dict) else {}
 
         payload = {
             "id": hit.get("_id") or str(source.get("id") or ""),
@@ -199,7 +200,7 @@ class IndexerClient:
                 description=_to_str(rule.get("description")),
             ),
             "source": AlertSource(srcip=_to_str(data.get("srcip"))),
-            "file": AlertFile(path=_to_str(syscheck.get("path"))),
+            "file": AlertFile(path=_to_str(syscheck.get("path") or nested_syscheck.get("path"))),
         }
 
         if include_raw:

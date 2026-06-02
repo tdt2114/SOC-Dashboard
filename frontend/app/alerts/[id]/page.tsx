@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AlertBookmarkButton } from "@/components/AlertBookmarkButton";
 import { AlertWorkflowPanel } from "@/components/AlertWorkflowPanel";
 import { AppShell } from "@/components/AppShell";
 import { ErrorState } from "@/components/ErrorState";
 import { KeyValueGrid } from "@/components/KeyValueGrid";
 import { SeverityBadge } from "@/components/SeverityBadge";
-import { getAlertWorkflowFromCookies, getCurrentUserFromCookies } from "@/lib/auth";
+import { getAlertBookmarkFromCookies, getAlertWorkflowFromCookies, getCurrentUserFromCookies } from "@/lib/auth";
 import { getAlert, getAlerts } from "@/lib/api";
 
 export default async function AlertDetailPage({
@@ -31,6 +32,9 @@ export default async function AlertDetailPage({
           })
         : null;
     const workflow = await getAlertWorkflowFromCookies(params.id);
+    const canBookmark =
+      currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
+    const bookmark = canBookmark ? await getAlertBookmarkFromCookies(params.id) : null;
     const moreAlertsFromAgent = (relatedAlerts?.items || []).filter((item) => item.id !== alert.id);
 
     return (
@@ -41,7 +45,10 @@ export default async function AlertDetailPage({
               <h3>Alert {alert.rule.id || alert.id}</h3>
               <p>Normalized view for Repo B. Raw payload remains available below.</p>
             </div>
-            <SeverityBadge value={alert.severity_label} />
+            <div className="alert-detail-actions">
+              {bookmark ? <AlertBookmarkButton alertId={params.id} initialBookmark={bookmark} /> : null}
+              <SeverityBadge value={alert.severity_label} />
+            </div>
           </div>
 
           <KeyValueGrid

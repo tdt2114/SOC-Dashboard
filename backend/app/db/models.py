@@ -45,10 +45,20 @@ class User(TimestampMixin, Base):
         cascade="all, delete-orphan",
         foreign_keys="AlertNote.author_user_id",
     )
+    alert_bookmarks: Mapped[list["AlertBookmark"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="AlertBookmark.user_id",
+    )
     notifications: Mapped[list["Notification"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
         foreign_keys="Notification.user_id",
+    )
+    saved_searches: Mapped[list["SavedSearch"]] = relationship(
+        back_populates="user",
+        cascade="all, delete-orphan",
+        foreign_keys="SavedSearch.user_id",
     )
 
 
@@ -129,6 +139,22 @@ class AlertNote(TimestampMixin, Base):
     )
 
 
+class AlertBookmark(TimestampMixin, Base):
+    __tablename__ = "alert_bookmarks"
+    __table_args__ = (
+        UniqueConstraint("user_id", "alert_id", name="uq_alert_bookmarks_user_id_alert_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    alert_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+
+    user: Mapped[User] = relationship(
+        back_populates="alert_bookmarks",
+        foreign_keys=[user_id],
+    )
+
+
 class Notification(TimestampMixin, Base):
     __tablename__ = "notifications"
 
@@ -147,15 +173,34 @@ class Notification(TimestampMixin, Base):
     )
 
 
+class SavedSearch(TimestampMixin, Base):
+    __tablename__ = "saved_searches"
+    __table_args__ = (
+        UniqueConstraint("user_id", "name", name="uq_saved_searches_user_id_name"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    filters: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+    user: Mapped[User] = relationship(
+        back_populates="saved_searches",
+        foreign_keys=[user_id],
+    )
+
+
 __all__ = [
     "Base",
     "AlertAssignment",
+    "AlertBookmark",
     "AlertNote",
     "AuditLog",
     "Department",
     "Notification",
     "Role",
     "RefreshToken",
+    "SavedSearch",
     "User",
     "UserRole",
 ]

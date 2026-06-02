@@ -1,11 +1,13 @@
 import { cookies } from "next/headers";
 
 import {
+  AlertBookmarkResponse,
   AlertWorkflowResponse,
   AuditLogListResponse,
   AuthLoginResponse,
   AuthUser,
   NotificationListResponse,
+  SavedSearchListResponse,
   UserAdminListResponse
 } from "@/lib/types";
 
@@ -180,6 +182,24 @@ export async function getAlertWorkflowFromCookies(alertId: string): Promise<Aler
   });
 }
 
+export async function getAlertBookmarkFromCookies(alertId: string): Promise<AlertBookmarkResponse> {
+  return authorizedJsonFetch<AlertBookmarkResponse>(`/api/alerts/${encodeURIComponent(alertId)}/bookmark`, {
+    method: "GET"
+  });
+}
+
+export async function bookmarkAlertAgainstBackend(alertId: string): Promise<AlertBookmarkResponse> {
+  return authorizedJsonFetch<AlertBookmarkResponse>(`/api/alerts/${encodeURIComponent(alertId)}/bookmark`, {
+    method: "POST"
+  });
+}
+
+export async function unbookmarkAlertAgainstBackend(alertId: string): Promise<AlertBookmarkResponse> {
+  return authorizedJsonFetch<AlertBookmarkResponse>(`/api/alerts/${encodeURIComponent(alertId)}/bookmark`, {
+    method: "DELETE"
+  });
+}
+
 export async function assignAlertAgainstBackend(
   alertId: string,
   payload: {
@@ -210,6 +230,28 @@ export async function addAlertNoteAgainstBackend(
 export async function getNotificationsFromCookies(): Promise<NotificationListResponse> {
   return authorizedJsonFetch<NotificationListResponse>("/api/notifications", {
     method: "GET"
+  });
+}
+
+export async function getSavedSearchesFromCookies(): Promise<SavedSearchListResponse> {
+  return authorizedJsonFetch<SavedSearchListResponse>("/api/saved-searches", {
+    method: "GET"
+  });
+}
+
+export async function createSavedSearchAgainstBackend(payload: {
+  name: string;
+  filters: Record<string, string>;
+}): Promise<void> {
+  await authorizedVoidFetch("/api/saved-searches", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function deleteSavedSearchAgainstBackend(savedSearchId: number): Promise<void> {
+  await authorizedVoidFetch(`/api/saved-searches/${savedSearchId}`, {
+    method: "DELETE"
   });
 }
 

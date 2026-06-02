@@ -4,9 +4,11 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
+import { SavedSearchPanel } from "@/components/SavedSearchPanel";
 import { SeverityBadge } from "@/components/SeverityBadge";
-import { getCurrentUserFromCookies } from "@/lib/auth";
+import { getCurrentUserFromCookies, getSavedSearchesFromCookies } from "@/lib/auth";
 import { getAlerts } from "@/lib/api";
+import { SavedSearchListResponse } from "@/lib/types";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -29,9 +31,19 @@ export default async function AlertsPage({
   const agentName = getParam(searchParams?.agent_name);
   const ruleId = getParam(searchParams?.rule_id);
   const query = getParam(searchParams?.q);
+  const currentFilters = {
+    q: query || "",
+    severity: severity || "",
+    agent_name: agentName || "",
+    rule_id: ruleId || "",
+    time_range: timeRange
+  };
+  const canUseSavedSearches =
+    currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
 
   let result = null;
   let loadError: string | null = null;
+  let savedSearches: SavedSearchListResponse = { items: [], total: 0 };
 
   try {
     result = await getAlerts({
@@ -42,6 +54,9 @@ export default async function AlertsPage({
       rule_id: ruleId,
       q: query
     });
+    if (canUseSavedSearches) {
+      savedSearches = await getSavedSearchesFromCookies();
+    }
   } catch (error) {
     loadError = error instanceof Error ? error.message : "Unknown alert loading error";
   }
@@ -83,6 +98,10 @@ export default async function AlertsPage({
           <button type="submit">Apply Filters</button>
         </form>
       </section>
+
+      {canUseSavedSearches ? (
+        <SavedSearchPanel initialData={savedSearches} currentFilters={currentFilters} />
+      ) : null}
 
       <section className="panel">
         <div className="panel-header">

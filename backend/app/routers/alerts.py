@@ -7,11 +7,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.config import Settings, get_settings
 from app.core.exceptions import UpstreamServiceError
 from app.db.session import get_db_session
+from app.schemas.alert_bookmarks import AlertBookmarkResponse
 from app.schemas.alerts import AlertDetail, AlertListResponse
 from app.schemas.alert_workflow import AlertAssignmentRequest, AlertNoteCreateRequest, AlertWorkflowResponse
-from app.services.indexer import IndexerClient
+from app.services.alert_bookmarks import bookmark_alert, get_alert_bookmark, unbookmark_alert
 from app.services.alert_workflow import add_alert_note, assign_alert, get_alert_workflow
 from app.services.auth import WORKFLOW_ROLES, get_current_user_model_from_token, require_user_roles
+from app.services.indexer import IndexerClient
 from app.services.mock_data import MockDataService
 
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
@@ -88,6 +90,51 @@ async def get_workflow(
     await get_current_user_model_from_token(session, credentials.credentials)
     await _ensure_alert_exists(alert_id, settings)
     return await get_alert_workflow(session, alert_id)
+
+
+@router.get("/{alert_id}/bookmark", response_model=AlertBookmarkResponse)
+async def get_bookmark(
+    alert_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    session: AsyncSession = Depends(get_db_session),
+    settings: Settings = Depends(get_settings),
+) -> AlertBookmarkResponse:
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+    current_user = await get_current_user_model_from_token(session, credentials.credentials)
+    require_user_roles(current_user, WORKFLOW_ROLES, detail="Alert bookmarks require analyst or admin access")
+    await _ensure_alert_exists(alert_id, settings)
+    return await get_alert_bookmark(session, current_user, alert_id)
+
+
+@router.post("/{alert_id}/bookmark", response_model=AlertBookmarkResponse)
+async def create_bookmark(
+    alert_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    session: AsyncSession = Depends(get_db_session),
+    settings: Settings = Depends(get_settings),
+) -> AlertBookmarkResponse:
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+    current_user = await get_current_user_model_from_token(session, credentials.credentials)
+    require_user_roles(current_user, WORKFLOW_ROLES, detail="Alert bookmarks require analyst or admin access")
+    await _ensure_alert_exists(alert_id, settings)
+    return await bookmark_alert(session, current_user, alert_id)
+
+
+@router.delete("/{alert_id}/bookmark", response_model=AlertBookmarkResponse)
+async def delete_bookmark(
+    alert_id: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    session: AsyncSession = Depends(get_db_session),
+    settings: Settings = Depends(get_settings),
+) -> AlertBookmarkResponse:
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
+    current_user = await get_current_user_model_from_token(session, credentials.credentials)
+    require_user_roles(current_user, WORKFLOW_ROLES, detail="Alert bookmarks require analyst or admin access")
+    await _ensure_alert_exists(alert_id, settings)
+    return await unbookmark_alert(session, current_user, alert_id)
 
 
 @router.patch("/{alert_id}/workflow/assignment", response_model=AlertWorkflowResponse)

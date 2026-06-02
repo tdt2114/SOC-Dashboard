@@ -908,6 +908,39 @@ button:disabled {
   gap: 1rem;
 }
 
+.alert-detail-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.bookmark-action {
+  display: grid;
+  justify-items: end;
+  gap: 0.35rem;
+}
+
+.bookmark-button {
+  width: auto;
+}
+
+.bookmark-button-active {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(245, 158, 11, 0.14);
+  color: #b45309;
+}
+
+:root[data-theme="dark"] .bookmark-button-active {
+  color: #fbbf24;
+}
+
+.compact-error {
+  margin: 0;
+  font-size: 0.78rem;
+}
+
 .workflow-card {
   display: grid;
   gap: 1rem;
@@ -1013,6 +1046,85 @@ button:disabled {
   align-items: center;
   color: var(--text-muted);
   font-size: 0.8rem;
+}
+
+.saved-search-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.saved-search-form {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) auto;
+  gap: 1rem;
+  align-items: end;
+}
+
+.saved-search-current {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.saved-search-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.saved-search-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.04);
+}
+
+:root[data-theme="dark"] .saved-search-item {
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.saved-search-item strong {
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.saved-search-item p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.saved-search-actions {
+  display: flex;
+  gap: 0.8rem;
+  align-items: center;
+  white-space: nowrap;
+}
+
+.link-button {
+  width: auto;
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  color: var(--accent-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.link-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.danger-link {
+  color: #dc2626;
 }
 
 .summary-card {
@@ -1146,6 +1258,16 @@ button:disabled {
   }
   .workflow-grid {
     grid-template-columns: 1fr;
+  }
+  .saved-search-form, .saved-search-item {
+    grid-template-columns: 1fr;
+  }
+  .saved-search-form {
+    display: grid;
+  }
+  .saved-search-item {
+    display: grid;
+    align-items: start;
   }
   .top-header {
     flex-direction: column;

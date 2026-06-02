@@ -54,6 +54,13 @@ export interface AlertWorkflowResponse {
   notes: AlertNoteInfo[];
 }
 
+export interface AlertBookmarkResponse {
+  alert_id: string;
+  is_bookmarked: boolean;
+  bookmark_id: number | null;
+  created_at: string | null;
+}
+
 export interface NotificationItem {
   id: number;
   type: string;
@@ -74,6 +81,19 @@ export interface AlertListResponse {
   items: AlertListItem[];
   page: number;
   page_size: number;
+  total: number;
+}
+
+export interface SavedSearchItem {
+  id: number;
+  name: string;
+  filters: Record<string, string>;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SavedSearchListResponse {
+  items: SavedSearchItem[];
   total: number;
 }
 
