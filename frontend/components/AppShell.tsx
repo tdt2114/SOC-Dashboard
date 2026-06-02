@@ -17,10 +17,16 @@ export function AppShell({
   children: ReactNode;
   currentUser: AuthUser | null;
 }) {
+  const canUseAnalystWorkflow =
+    currentUser?.is_superuser || currentUser?.roles.some((role) => role === "admin" || role === "analyst");
   const navItems = [
     { href: "/alerts", label: "Alerts" },
     { href: "/agents", label: "Agents" }
   ];
+
+  if (canUseAnalystWorkflow) {
+    navItems.push({ href: "/cases", label: "Cases" });
+  }
 
   if (currentUser?.is_superuser) {
     navItems.push({ href: "/users", label: "Users" });

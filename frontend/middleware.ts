@@ -7,6 +7,8 @@ function isProtectedPath(pathname: string) {
     pathname === "/alerts" ||
     pathname.startsWith("/alerts/") ||
     pathname === "/agents" ||
+    pathname === "/cases" ||
+    pathname.startsWith("/cases/") ||
     pathname === "/profile" ||
     pathname === "/users" ||
     pathname === "/audit-logs"
@@ -31,5 +33,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/login", "/alerts/:path*", "/agents", "/profile", "/users", "/audit-logs"]
+  matcher: ["/login", "/alerts/:path*", "/agents", "/cases", "/cases/:path*", "/profile", "/users", "/audit-logs"]
 };

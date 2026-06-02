@@ -1,13 +1,19 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AlertCasePanel } from "@/components/AlertCasePanel";
 import { AlertBookmarkButton } from "@/components/AlertBookmarkButton";
 import { AlertWorkflowPanel } from "@/components/AlertWorkflowPanel";
 import { AppShell } from "@/components/AppShell";
 import { ErrorState } from "@/components/ErrorState";
 import { KeyValueGrid } from "@/components/KeyValueGrid";
 import { SeverityBadge } from "@/components/SeverityBadge";
-import { getAlertBookmarkFromCookies, getAlertWorkflowFromCookies, getCurrentUserFromCookies } from "@/lib/auth";
+import {
+  getAlertBookmarkFromCookies,
+  getAlertWorkflowFromCookies,
+  getCasesFromCookies,
+  getCurrentUserFromCookies
+} from "@/lib/auth";
 import { getAlert, getAlerts } from "@/lib/api";
 
 export default async function AlertDetailPage({
@@ -35,6 +41,7 @@ export default async function AlertDetailPage({
     const canBookmark =
       currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
     const bookmark = canBookmark ? await getAlertBookmarkFromCookies(params.id) : null;
+    const cases = canBookmark ? await getCasesFromCookies() : null;
     const moreAlertsFromAgent = (relatedAlerts?.items || []).filter((item) => item.id !== alert.id);
 
     return (
@@ -158,6 +165,7 @@ export default async function AlertDetailPage({
           </section>
 
           <AlertWorkflowPanel alertId={params.id} currentUser={currentUser} initialWorkflow={workflow} />
+          {cases ? <AlertCasePanel alertId={params.id} cases={cases} /> : null}
 
           <div className="code-panel">
             <div className="panel-header">

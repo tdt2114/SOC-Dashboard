@@ -60,6 +60,14 @@ class User(TimestampMixin, Base):
         cascade="all, delete-orphan",
         foreign_keys="SavedSearch.user_id",
     )
+    owned_cases: Mapped[list["Case"]] = relationship(
+        back_populates="owner_user",
+        foreign_keys="Case.owner_user_id",
+    )
+    created_cases: Mapped[list["Case"]] = relationship(
+        back_populates="created_by_user",
+        foreign_keys="Case.created_by_user_id",
+    )
 
 
 class Role(TimestampMixin, Base):
@@ -190,12 +198,64 @@ class SavedSearch(TimestampMixin, Base):
     )
 
 
+class Case(TimestampMixin, Base):
+    __tablename__ = "cases"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(50), default="open", nullable=False, index=True)
+    severity: Mapped[str] = mapped_column(String(50), default="medium", nullable=False, index=True)
+    owner_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    created_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+    owner_user: Mapped[User | None] = relationship(
+        back_populates="owned_cases",
+        foreign_keys=[owner_user_id],
+    )
+    created_by_user: Mapped[User | None] = relationship(
+        back_populates="created_cases",
+        foreign_keys=[created_by_user_id],
+    )
+    alerts: Mapped[list["CaseAlert"]] = relationship(back_populates="case", cascade="all, delete-orphan")
+    comments: Mapped[list["CaseComment"]] = relationship(back_populates="case", cascade="all, delete-orphan")
+
+
+class CaseAlert(TimestampMixin, Base):
+    __tablename__ = "case_alerts"
+    __table_args__ = (
+        UniqueConstraint("case_id", "alert_id", name="uq_case_alerts_case_id_alert_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), nullable=False, index=True)
+    alert_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    added_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+    case: Mapped[Case] = relationship(back_populates="alerts")
+
+
+class CaseComment(TimestampMixin, Base):
+    __tablename__ = "case_comments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    case_id: Mapped[int] = mapped_column(ForeignKey("cases.id"), nullable=False, index=True)
+    author_user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+
+    case: Mapped[Case] = relationship(back_populates="comments")
+    author_user: Mapped[User] = relationship(foreign_keys=[author_user_id])
+
+
 __all__ = [
     "Base",
     "AlertAssignment",
     "AlertBookmark",
     "AlertNote",
     "AuditLog",
+    "Case",
+    "CaseAlert",
+    "CaseComment",
     "Department",
     "Notification",
     "Role",

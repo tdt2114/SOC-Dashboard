@@ -190,3 +190,45 @@ export interface AuditLogListResponse {
   items: AuditLogItem[];
   total: number;
 }
+
+export interface CaseAlertItem {
+  id: number;
+  alert_id: string;
+  created_at: string;
+}
+
+export interface CaseCommentItem {
+  id: number;
+  author_user_id: number;
+  author_username: string;
+  author_full_name: string | null;
+  body: string;
+  created_at: string;
+}
+
+export interface CaseItem {
+  id: number;
+  title: string;
+  description: string | null;
+  status: string;
+  severity: string;
+  owner_user_id: number | null;
+  owner_username: string | null;
+  owner_full_name: string | null;
+  created_by_user_id: number | null;
+  created_by_username: string | null;
+  alert_count: number;
+  comment_count: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CaseDetail extends CaseItem {
+  alerts: CaseAlertItem[];
+  comments: CaseCommentItem[];
+}
+
+export interface CaseListResponse {
+  items: CaseItem[];
+  total: number;
+}

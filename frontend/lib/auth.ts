@@ -6,6 +6,8 @@ import {
   AuditLogListResponse,
   AuthLoginResponse,
   AuthUser,
+  CaseDetail,
+  CaseListResponse,
   NotificationListResponse,
   SavedSearchListResponse,
   UserAdminListResponse
@@ -252,6 +254,68 @@ export async function createSavedSearchAgainstBackend(payload: {
 export async function deleteSavedSearchAgainstBackend(savedSearchId: number): Promise<void> {
   await authorizedVoidFetch(`/api/saved-searches/${savedSearchId}`, {
     method: "DELETE"
+  });
+}
+
+export async function getCasesFromCookies(): Promise<CaseListResponse> {
+  return authorizedJsonFetch<CaseListResponse>("/api/cases", {
+    method: "GET"
+  });
+}
+
+export async function getCaseFromCookies(caseId: number): Promise<CaseDetail> {
+  return authorizedJsonFetch<CaseDetail>(`/api/cases/${caseId}`, {
+    method: "GET"
+  });
+}
+
+export async function createCaseAgainstBackend(payload: {
+  title: string;
+  description?: string | null;
+  status?: string;
+  severity?: string;
+  owner_user_id?: number | null;
+  alert_id?: string | null;
+}): Promise<CaseDetail> {
+  return authorizedJsonFetch<CaseDetail>("/api/cases", {
+    method: "POST",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function updateCaseAgainstBackend(
+  caseId: number,
+  payload: {
+    title?: string;
+    description?: string | null;
+    status?: string;
+    severity?: string;
+    owner_user_id?: number | null;
+  }
+): Promise<CaseDetail> {
+  return authorizedJsonFetch<CaseDetail>(`/api/cases/${caseId}`, {
+    method: "PATCH",
+    body: JSON.stringify(payload)
+  });
+}
+
+export async function addAlertToCaseAgainstBackend(caseId: number, alertId: string): Promise<CaseDetail> {
+  return authorizedJsonFetch<CaseDetail>(`/api/cases/${caseId}/alerts`, {
+    method: "POST",
+    body: JSON.stringify({ alert_id: alertId })
+  });
+}
+
+export async function removeAlertFromCaseAgainstBackend(caseId: number, alertId: string): Promise<CaseDetail> {
+  return authorizedJsonFetch<CaseDetail>(`/api/cases/${caseId}/alerts/${encodeURIComponent(alertId)}`, {
+    method: "DELETE"
+  });
+}
+
+export async function addCaseCommentAgainstBackend(caseId: number, body: string): Promise<CaseDetail> {
+  return authorizedJsonFetch<CaseDetail>(`/api/cases/${caseId}/comments`, {
+    method: "POST",
+    body: JSON.stringify({ body })
   });
 }
 
