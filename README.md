@@ -125,6 +125,42 @@ The script verifies:
 - alert detail back action
 - CSV exports
 
+## Pilot Regression Tests
+
+Run the deeper API and frontend route regression tests before pilot handoff or after changing auth, alerts, saved searches, workflow, or navigation.
+
+PowerShell:
+
+```powershell
+$env:PILOT_TEST_USERNAME = "<superadmin-username>"
+$env:PILOT_TEST_PASSWORD = "<superadmin-password>"
+python -m unittest discover -s tests -v
+```
+
+Bash:
+
+```bash
+PILOT_TEST_USERNAME=<superadmin-username> PILOT_TEST_PASSWORD=<superadmin-password> python -m unittest discover -s tests -v
+```
+
+The tests verify:
+
+- backend health, auth `/me`, and superadmin-only user API access
+- alert list pagination, severity filter, agent list, agent-name filter, and alert detail
+- saved search create/update/delete with cleanup
+- alert bookmark and assignment flows with cleanup
+- case create, alert link, comment, update, alert unlink, and close flow
+- frontend stale-cookie redirect behavior
+- protected frontend routes
+- `/alerts` compact saved search UI, agent dropdown, pagination, and alert detail back action
+- frontend saved-search proxy create/delete flow with cleanup
+- frontend case proxy workflow with closed-case cleanup
+
+## Backup and Results
+
+- PostgreSQL backup/restore runbook: [docs/POSTGRES_BACKUP_RESTORE.md](docs/POSTGRES_BACKUP_RESTORE.md)
+- Pilot verification results for report reuse: [docs/PILOT_TEST_RESULTS.md](docs/PILOT_TEST_RESULTS.md)
+
 ## Seeded Accounts
 
 The seed script creates:
@@ -133,6 +169,7 @@ The seed script creates:
 - roles: `admin`, `analyst`, `viewer`
 - one admin account
 - one superadmin account
+- pilot regression accounts for `viewer`, `analyst`, and non-superuser `admin`
 
 Credential values come from `.env`:
 
@@ -140,6 +177,12 @@ Credential values come from `.env`:
 - `SEED_ADMIN_PASSWORD`
 - `SEED_SUPERADMIN_USERNAME`
 - `SEED_SUPERADMIN_PASSWORD`
+- `SEED_VIEWER_USERNAME`
+- `SEED_VIEWER_PASSWORD`
+- `SEED_ANALYST_USERNAME`
+- `SEED_ANALYST_PASSWORD`
+- `SEED_ROLE_ADMIN_USERNAME`
+- `SEED_ROLE_ADMIN_PASSWORD`
 
 Change these values outside local development.
 
@@ -166,6 +209,8 @@ Change these values outside local development.
 - `superadmin`: all admin screens, user management, audit logs, settings
 
 Backend endpoints still enforce permissions. Frontend access-denied states are UX support, not the security boundary.
+
+The pilot regression suite logs in as the seeded viewer, analyst, and non-superuser admin accounts to verify both backend permissions and frontend navigation/access states.
 
 ## Pilot Readiness
 

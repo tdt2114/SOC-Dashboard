@@ -37,6 +37,18 @@ class Settings:
     seed_superadmin_email: str
     seed_superadmin_password: str
     seed_superadmin_full_name: str
+    seed_viewer_username: str
+    seed_viewer_email: str
+    seed_viewer_password: str
+    seed_viewer_full_name: str
+    seed_analyst_username: str
+    seed_analyst_email: str
+    seed_analyst_password: str
+    seed_analyst_full_name: str
+    seed_role_admin_username: str
+    seed_role_admin_email: str
+    seed_role_admin_password: str
+    seed_role_admin_full_name: str
     api_timeout_seconds: float
     indexer_timeout_seconds: float
     verify_tls: bool
@@ -89,6 +101,18 @@ def get_settings() -> Settings:
         seed_superadmin_email=os.getenv("SEED_SUPERADMIN_EMAIL", "superadmin@local.test"),
         seed_superadmin_password=os.getenv("SEED_SUPERADMIN_PASSWORD", "SuperAdmin123!ChangeMe"),
         seed_superadmin_full_name=os.getenv("SEED_SUPERADMIN_FULL_NAME", "SOC Super Admin"),
+        seed_viewer_username=os.getenv("SEED_VIEWER_USERNAME", "pilot_viewer"),
+        seed_viewer_email=os.getenv("SEED_VIEWER_EMAIL", "pilot.viewer@local.test"),
+        seed_viewer_password=os.getenv("SEED_VIEWER_PASSWORD", "PilotViewer123!ChangeMe"),
+        seed_viewer_full_name=os.getenv("SEED_VIEWER_FULL_NAME", "SOC Pilot Viewer"),
+        seed_analyst_username=os.getenv("SEED_ANALYST_USERNAME", "pilot_analyst"),
+        seed_analyst_email=os.getenv("SEED_ANALYST_EMAIL", "pilot.analyst@local.test"),
+        seed_analyst_password=os.getenv("SEED_ANALYST_PASSWORD", "PilotAnalyst123!ChangeMe"),
+        seed_analyst_full_name=os.getenv("SEED_ANALYST_FULL_NAME", "SOC Pilot Analyst"),
+        seed_role_admin_username=os.getenv("SEED_ROLE_ADMIN_USERNAME", "pilot_admin"),
+        seed_role_admin_email=os.getenv("SEED_ROLE_ADMIN_EMAIL", "pilot.admin@local.test"),
+        seed_role_admin_password=os.getenv("SEED_ROLE_ADMIN_PASSWORD", "PilotAdmin123!ChangeMe"),
+        seed_role_admin_full_name=os.getenv("SEED_ROLE_ADMIN_FULL_NAME", "SOC Pilot Admin"),
         api_timeout_seconds=float(os.getenv("API_TIMEOUT_SECONDS", "10")),
         indexer_timeout_seconds=float(os.getenv("INDEXER_TIMEOUT_SECONDS", "10")),
         verify_tls=_as_bool(os.getenv("VERIFY_TLS"), default=False),

@@ -53,6 +53,22 @@ curl -I http://localhost:3000/login
 
 Expected: HTTP `200`.
 
+## Backup Requirement
+
+Before a pilot handoff, demo, migration, or bulk account change, create a PostgreSQL backup:
+
+```powershell
+.\scripts\backup_postgres.ps1
+```
+
+See [POSTGRES_BACKUP_RESTORE.md](POSTGRES_BACKUP_RESTORE.md) for backup, restore, retention, and verification steps.
+
+Verify the backup can restore into a disposable PostgreSQL container:
+
+```powershell
+.\scripts\restore_drill_postgres.ps1
+```
+
 ## Manual Smoke Test
 
 Use the seeded superadmin account from `.env`.
@@ -101,15 +117,37 @@ Role checks:
 - Admin or analyst cannot access `/users`, `/audit-logs`, or `/settings`.
 - Viewer can monitor alerts/agents but cannot use analyst workflow.
 
+## Pilot Regression Tests
+
+Run the dependency-free unittest suite before pilot handoff and after changes to auth, navigation, alerts, saved searches, or workflow.
+
+PowerShell:
+
+```powershell
+$env:PILOT_TEST_USERNAME = "<superadmin-username>"
+$env:PILOT_TEST_PASSWORD = "<superadmin-password>"
+python -m unittest discover -s tests -v
+```
+
+Bash:
+
+```bash
+PILOT_TEST_USERNAME=<username> PILOT_TEST_PASSWORD=<password> python -m unittest discover -s tests -v
+```
+
+The suite covers:
+
+- API: health, auth, users gate, alerts, agents, filters, saved-search CRUD, bookmark, and assignment
+- Case workflow: create, link alert, comment, update, unlink alert, and close regression case
+- Role permissions: seeded viewer, analyst, and non-superuser admin access boundaries
+- Frontend: stale-cookie redirect, protected routes, alert detail back action, alert pagination, compact saved-search UI, agent dropdown, role navigation/access states, saved-search proxy cleanup, and case proxy workflow
+
 ## Known Gaps Before Production
 
-- No automated E2E test suite yet.
-- API test coverage should be expanded for auth, roles, users, cases, and exports.
 - No SSO.
 - No external notification channel.
 - No rate limiting.
 - No Redis/session store split.
-- No backup/restore runbook for PostgreSQL.
 - No log retention policy.
 - No formal secret rotation procedure.
 - Frontend dependencies should be reviewed because `npm audit` currently reports one moderate and one high advisory during image build.
@@ -129,8 +167,8 @@ The pilot can be considered successful when:
 
 ## Recommended Next Work
 
-1. Add backend API tests for auth, users, cases, and exports.
-2. Add frontend E2E smoke tests for login, alerts, cases, users, audit logs, and stale-cookie behavior.
-3. Add PostgreSQL backup/restore notes.
-4. Replace remote Google font dependency with a local font strategy.
-5. Review and address npm advisories.
+1. Replace remote Google font dependency with a local font strategy.
+2. Review and address npm advisories.
+3. Add a CI job for smoke and pilot regression tests.
+4. Add retention/archival policy for closed regression and pilot cases.
+5. Add a formal production restore approval procedure.

@@ -8,8 +8,8 @@ import { SavedSearchPanel } from "@/components/SavedSearchPanel";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { getAgentDisplayName } from "@/lib/agentDisplay";
 import { getCurrentUserFromCookies, getSavedSearchesFromCookies } from "@/lib/auth";
-import { getAlerts } from "@/lib/api";
-import { SavedSearchListResponse } from "@/lib/types";
+import { getAgents, getAlerts } from "@/lib/api";
+import type { AgentListItem, SavedSearchListResponse } from "@/lib/types";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -96,8 +96,16 @@ export default async function AlertsPage({
   let result = null;
   let loadError: string | null = null;
   let savedSearches: SavedSearchListResponse = { items: [], total: 0 };
+  let agentOptions: AgentListItem[] = [];
 
   try {
+    try {
+      const agents = await getAgents({});
+      agentOptions = agents.items;
+    } catch {
+      agentOptions = [];
+    }
+
     result = await getAlerts({
       page,
       page_size: pageSize,
@@ -135,7 +143,14 @@ export default async function AlertsPage({
           </label>
           <label>
             <span>Agent Name</span>
-            <input type="text" name="agent_name" defaultValue={agentName} placeholder="SOC-Server-Dev" />
+            <select name="agent_name" defaultValue={agentName || ""}>
+              <option value="">All agents</option>
+              {agentOptions.map((agent) => (
+                <option key={agent.id} value={agent.name || ""} disabled={!agent.name}>
+                  {getAgentDisplayName(agent)}
+                </option>
+              ))}
+            </select>
           </label>
           <label>
             <span>Rule ID</span>
@@ -158,11 +173,11 @@ export default async function AlertsPage({
           </label>
           <button type="submit">Apply Filters</button>
         </form>
-      </section>
 
-      {canUseSavedSearches ? (
-        <SavedSearchPanel initialData={savedSearches} currentFilters={currentFilters} />
-      ) : null}
+        {canUseSavedSearches ? (
+          <SavedSearchPanel initialData={savedSearches} currentFilters={currentFilters} />
+        ) : null}
+      </section>
 
       <section className="panel">
         <div className="panel-header">

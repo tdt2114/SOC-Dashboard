@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { SavedSearchListResponse } from "@/lib/types";
@@ -42,14 +41,23 @@ export function SavedSearchPanel({
   currentFilters: Record<string, string>;
 }) {
   const router = useRouter();
-  const [name, setName] = useState("");
+  const [selectedId, setSelectedId] = useState(initialData.items[0]?.id ? String(initialData.items[0].id) : "");
   const [isSaving, setIsSaving] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const selectedSearch = useMemo(
+    () => initialData.items.find((item) => String(item.id) === selectedId) || null,
+    [initialData.items, selectedId]
+  );
 
-  async function handleSave(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  async function handleSave() {
+    const defaultName = filterSummary(currentFilters);
+    const name = window.prompt("Name this saved search", defaultName === "No filters" ? "" : defaultName);
+    if (!name?.trim()) {
+      return;
+    }
+
     setError(null);
     setMessage(null);
     setIsSaving(true);
@@ -58,13 +66,12 @@ export function SavedSearchPanel({
       const response = await fetch("/api/saved-searches", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, filters: currentFilters })
+        body: JSON.stringify({ name: name.trim(), filters: currentFilters })
       });
       const payload = (await response.json()) as { detail?: string };
       if (!response.ok) {
         throw new Error(payload.detail || "Unable to save search");
       }
-      setName("");
       setMessage("Saved search created.");
       router.refresh();
     } catch (saveError) {
@@ -88,6 +95,9 @@ export function SavedSearchPanel({
         throw new Error(payload.detail || "Unable to delete saved search");
       }
       setMessage("Saved search deleted.");
+      if (String(savedSearchId) === selectedId) {
+        setSelectedId("");
+      }
       router.refresh();
     } catch (deleteError) {
       setError(deleteError instanceof Error ? deleteError.message : "Unable to delete saved search");
@@ -97,62 +107,54 @@ export function SavedSearchPanel({
   }
 
   return (
-    <section className="panel saved-search-panel">
-      <div className="panel-header">
-        <div>
-          <h3>Saved Searches</h3>
-          <p>Keep frequently used alert filters ready for analyst triage.</p>
-        </div>
-      </div>
-
-      <form className="saved-search-form" onSubmit={handleSave}>
-        <label>
-          <span>Search Name</span>
-          <input
-            type="text"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder="High severity from SOC-Server-Dev"
-            maxLength={100}
-            required
-          />
-        </label>
-        <button type="submit" disabled={isSaving}>
-          {isSaving ? "Saving..." : "Save Current Filters"}
-        </button>
-      </form>
-
-      <p className="saved-search-current">{filterSummary(currentFilters)}</p>
+    <div className="saved-search-inline">
+      <label>
+        <span>Saved search</span>
+        <select
+          value={selectedId}
+          onChange={(event) => setSelectedId(event.target.value)}
+          disabled={initialData.items.length === 0}
+        >
+          {initialData.items.length === 0 ? (
+            <option value="">No saved searches</option>
+          ) : (
+            initialData.items.map((item) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
+              </option>
+            ))
+          )}
+        </select>
+      </label>
+      <button
+        type="button"
+        className="secondary-button"
+        onClick={() => {
+          if (selectedSearch) {
+            router.push(buildHref(selectedSearch.filters));
+          }
+        }}
+        disabled={!selectedSearch}
+      >
+        Apply
+      </button>
+      <button type="button" className="secondary-button" onClick={handleSave} disabled={isSaving}>
+        {isSaving ? "Saving..." : "Save current"}
+      </button>
+      <button
+        type="button"
+        className="secondary-button danger-button"
+        onClick={() => {
+          if (selectedSearch) {
+            void handleDelete(selectedSearch.id);
+          }
+        }}
+        disabled={!selectedSearch || deletingId === selectedSearch.id}
+      >
+        {selectedSearch && deletingId === selectedSearch.id ? "Deleting..." : "Delete"}
+      </button>
       {error ? <p className="form-error">{error}</p> : null}
       {message ? <p className="form-success">{message}</p> : null}
-
-      {initialData.items.length === 0 ? (
-        <p className="inline-empty">No saved searches yet.</p>
-      ) : (
-        <div className="saved-search-list">
-          {initialData.items.map((item) => (
-            <article key={item.id} className="saved-search-item">
-              <div>
-                <strong>{item.name}</strong>
-                <p>{filterSummary(item.filters)}</p>
-              </div>
-              <div className="saved-search-actions">
-                <Link href={buildHref(item.filters)} className="text-link">
-                  Apply
-                </Link>
-                <button
-                  type="button"
-                  className="link-button danger-link"
-                  onClick={() => handleDelete(item.id)}
-                  disabled={deletingId === item.id}
-                >
-                  {deletingId === item.id ? "Deleting..." : "Delete"}
-                </button>
-              </div>
-            </article>
-          ))}
-        </div>
-      )}
-    </section>
+    </div>
   );
 }

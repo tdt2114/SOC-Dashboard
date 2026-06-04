@@ -1306,62 +1306,44 @@ button:disabled {
   font-size: 0.8rem;
 }
 
-.saved-search-panel {
+.saved-search-inline {
   display: grid;
-  gap: 1rem;
-}
-
-.saved-search-form {
-  display: grid;
-  grid-template-columns: minmax(240px, 1fr) auto;
-  gap: 1rem;
-  align-items: end;
-}
-
-.saved-search-current {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-
-.saved-search-list {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.saved-search-item {
-  display: flex;
-  justify-content: space-between;
-  gap: 1rem;
-  align-items: center;
-  padding: 0.95rem 1rem;
-  border: 1px solid var(--panel-border);
-  border-radius: 12px;
-  background: rgba(0, 0, 0, 0.04);
-}
-
-:root[data-theme="dark"] .saved-search-item {
-  background: rgba(0, 0, 0, 0.18);
-}
-
-.saved-search-item strong {
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.saved-search-item p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 0.82rem;
-  line-height: 1.5;
-}
-
-.saved-search-actions {
-  display: flex;
+  grid-template-columns: minmax(220px, 1fr) auto auto auto;
   gap: 0.8rem;
-  align-items: center;
-  white-space: nowrap;
+  align-items: end;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--panel-border);
+}
+
+.saved-search-inline .form-error,
+.saved-search-inline .form-success {
+  grid-column: 1 / -1;
+}
+
+.secondary-button {
+  min-height: 2.8rem;
+  padding: 0.7rem 1rem;
+  border: 1px solid var(--panel-border);
+  background: transparent;
+  color: var(--accent-primary);
+  box-shadow: none;
+  font-weight: 800;
+}
+
+.secondary-button:hover {
+  background: rgba(14, 165, 233, 0.1);
+  color: var(--text-primary);
+  box-shadow: none;
+}
+
+.danger-button {
+  color: var(--critical);
+}
+
+.danger-button:hover {
+  background: var(--critical-bg);
+  color: var(--critical);
 }
 
 .link-button {
@@ -1644,15 +1626,8 @@ button:disabled {
   .workflow-grid {
     grid-template-columns: 1fr;
   }
-  .saved-search-form, .saved-search-item {
+  .saved-search-inline {
     grid-template-columns: 1fr;
-  }
-  .saved-search-form {
-    display: grid;
-  }
-  .saved-search-item {
-    display: grid;
-    align-items: start;
   }
   .case-form, .case-workflow-grid, .case-inline-form {
     grid-template-columns: 1fr;

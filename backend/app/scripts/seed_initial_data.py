@@ -94,13 +94,20 @@ async def ensure_user_role(session, *, user_id: int, role_id: int) -> None:
         await session.flush()
 
 
+async def set_user_roles(session, *, user_id: int, role_ids: list[int]) -> None:
+    await session.execute(UserRole.__table__.delete().where(UserRole.user_id == user_id))
+    for role_id in sorted(set(role_ids)):
+        session.add(UserRole(user_id=user_id, role_id=role_id))
+    await session.flush()
+
+
 async def seed() -> None:
     async with AsyncSessionLocal() as session:
         department = await get_or_create_department(session)
 
         admin_role = await get_or_create_role(session, "admin", "Administrative access to Repo B.")
-        await get_or_create_role(session, "analyst", "Analyst access to alerts and workflow.")
-        await get_or_create_role(session, "viewer", "Read-only access to Repo B.")
+        analyst_role = await get_or_create_role(session, "analyst", "Analyst access to alerts and workflow.")
+        viewer_role = await get_or_create_role(session, "viewer", "Read-only access to Repo B.")
 
         admin_user = await get_or_create_user(
             session,
@@ -120,9 +127,39 @@ async def seed() -> None:
             is_superuser=True,
             department_id=department.id,
         )
+        viewer_user = await get_or_create_user(
+            session,
+            username=settings.seed_viewer_username,
+            email=settings.seed_viewer_email,
+            password=settings.seed_viewer_password,
+            full_name=settings.seed_viewer_full_name,
+            is_superuser=False,
+            department_id=department.id,
+        )
+        analyst_user = await get_or_create_user(
+            session,
+            username=settings.seed_analyst_username,
+            email=settings.seed_analyst_email,
+            password=settings.seed_analyst_password,
+            full_name=settings.seed_analyst_full_name,
+            is_superuser=False,
+            department_id=department.id,
+        )
+        role_admin_user = await get_or_create_user(
+            session,
+            username=settings.seed_role_admin_username,
+            email=settings.seed_role_admin_email,
+            password=settings.seed_role_admin_password,
+            full_name=settings.seed_role_admin_full_name,
+            is_superuser=False,
+            department_id=department.id,
+        )
 
         await ensure_user_role(session, user_id=admin_user.id, role_id=admin_role.id)
         await ensure_user_role(session, user_id=superadmin_user.id, role_id=admin_role.id)
+        await set_user_roles(session, user_id=viewer_user.id, role_ids=[viewer_role.id])
+        await set_user_roles(session, user_id=analyst_user.id, role_ids=[analyst_role.id])
+        await set_user_roles(session, user_id=role_admin_user.id, role_ids=[admin_role.id])
 
         await session.commit()
 
@@ -130,6 +167,9 @@ async def seed() -> None:
         print(f"- department: {department.code} / {department.name}")
         print(f"- admin: {settings.seed_admin_username}")
         print(f"- superadmin: {settings.seed_superadmin_username}")
+        print(f"- viewer: {settings.seed_viewer_username}")
+        print(f"- analyst: {settings.seed_analyst_username}")
+        print(f"- role admin: {settings.seed_role_admin_username}")
 
 
 if __name__ == "__main__":

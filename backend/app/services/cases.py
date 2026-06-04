@@ -115,6 +115,7 @@ async def _load_case(session: AsyncSession, case_id: int) -> Case:
             selectinload(Case.alerts),
             selectinload(Case.comments).selectinload(CaseComment.author_user),
         )
+        .execution_options(populate_existing=True)
     )
     item = result.scalar_one_or_none()
     if item is None:
