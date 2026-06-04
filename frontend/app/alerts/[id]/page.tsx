@@ -8,6 +8,7 @@ import { AppShell } from "@/components/AppShell";
 import { ErrorState } from "@/components/ErrorState";
 import { KeyValueGrid } from "@/components/KeyValueGrid";
 import { SeverityBadge } from "@/components/SeverityBadge";
+import { getAgentDisplayName } from "@/lib/agentDisplay";
 import {
   getAlertBookmarkFromCookies,
   getAlertWorkflowFromCookies,
@@ -43,9 +44,10 @@ export default async function AlertDetailPage({
     const bookmark = canBookmark ? await getAlertBookmarkFromCookies(params.id) : null;
     const cases = canBookmark ? await getCasesFromCookies() : null;
     const moreAlertsFromAgent = (relatedAlerts?.items || []).filter((item) => item.id !== alert.id);
+    const agentDisplayName = getAgentDisplayName(alert.agent);
 
     return (
-      <AppShell title="Alert Detail" eyebrow="MVP Screen 2" currentUser={currentUser}>
+      <AppShell title="Alert Detail" eyebrow="Alert Triage" currentUser={currentUser}>
         <section className="panel stack">
           <div className="panel-header">
             <div>
@@ -53,6 +55,9 @@ export default async function AlertDetailPage({
               <p>Normalized view for Repo B. Raw payload remains available below.</p>
             </div>
             <div className="alert-detail-actions">
+              <Link href="/alerts" className="state-action state-action-compact">
+                Back to alerts
+              </Link>
               {bookmark ? <AlertBookmarkButton alertId={params.id} initialBookmark={bookmark} /> : null}
               <SeverityBadge value={alert.severity_label} />
             </div>
@@ -67,12 +72,12 @@ export default async function AlertDetailPage({
               {
                 label: "Agent Name",
                 value:
-                  alert.agent.id && alert.agent.name ? (
+                  alert.agent.id ? (
                     <Link href={`/agents/${encodeURIComponent(alert.agent.id)}`} className="text-link">
-                      {alert.agent.name}
+                      {agentDisplayName}
                     </Link>
                   ) : (
-                    alert.agent.name
+                    agentDisplayName
                   )
               },
               {
@@ -105,7 +110,7 @@ export default async function AlertDetailPage({
             </div>
             <KeyValueGrid
               items={[
-                { label: "Agent Name", value: alert.agent.name },
+                { label: "Agent Name", value: agentDisplayName },
                 { label: "Agent ID", value: alert.agent.id },
                 { label: "Current Alert", value: alert.rule.description }
               ]}
@@ -170,9 +175,6 @@ export default async function AlertDetailPage({
           <div className="code-panel">
             <div className="panel-header">
               <h3>Raw JSON</h3>
-              <Link href="/alerts" className="text-link">
-                Back to alerts
-              </Link>
             </div>
             <pre>{JSON.stringify(alert.raw, null, 2)}</pre>
           </div>
@@ -182,7 +184,7 @@ export default async function AlertDetailPage({
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown alert detail error";
     return (
-      <AppShell title="Alert Detail" eyebrow="MVP Screen 2" currentUser={currentUser}>
+      <AppShell title="Alert Detail" eyebrow="Alert Triage" currentUser={currentUser}>
         <section className="panel">
           <ErrorState
             title="Alert detail is unavailable"

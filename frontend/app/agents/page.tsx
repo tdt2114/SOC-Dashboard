@@ -2,6 +2,7 @@ import Link from "next/link";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
+import { getAgentDisplayName } from "@/lib/agentDisplay";
 import { getCurrentUserFromCookies } from "@/lib/auth";
 import { getAgents } from "@/lib/api";
 import { redirect } from "next/navigation";
@@ -33,7 +34,7 @@ export default async function AgentsPage({
   }
 
   return (
-    <AppShell title="Agent Inventory" eyebrow="MVP Screen 3" currentUser={currentUser}>
+    <AppShell title="Agent Inventory" eyebrow="Monitoring Context" currentUser={currentUser}>
       <section className="panel">
         <form className="filter-grid filter-grid-agents" method="get">
           <label>
@@ -94,7 +95,7 @@ export default async function AgentsPage({
                     </td>
                     <td>
                       <Link href={`/agents/${encodeURIComponent(item.id)}`} className="table-row-link">
-                        {item.name || "N/A"}
+                        {getAgentDisplayName(item)}
                       </Link>
                     </td>
                     <td>

@@ -6,6 +6,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
 import { KeyValueGrid } from "@/components/KeyValueGrid";
 import { SeverityBadge } from "@/components/SeverityBadge";
+import { getAgentDisplayName } from "@/lib/agentDisplay";
 import { getCurrentUserFromCookies } from "@/lib/auth";
 import { getAgent } from "@/lib/api";
 
@@ -22,13 +23,14 @@ export default async function AgentDetailPage({
   try {
     const result = await getAgent(params.id);
     const { agent, recent_alerts, monitoring_context } = result;
+    const agentDisplayName = getAgentDisplayName(agent);
 
     return (
       <AppShell title="Agent Detail" eyebrow="Monitoring Context" currentUser={currentUser}>
         <section className="panel stack">
           <div className="panel-header">
             <div>
-              <h3>{agent.name || agent.id}</h3>
+              <h3>{agentDisplayName}</h3>
               <p>Agent-centric view for host status and recent alerts tied to this monitored machine.</p>
             </div>
             <span className={`status-pill status-${(agent.status || "unknown").toLowerCase()}`}>
@@ -39,7 +41,7 @@ export default async function AgentDetailPage({
           <KeyValueGrid
             items={[
               { label: "Agent ID", value: agent.id },
-              { label: "Agent Name", value: agent.name },
+              { label: "Agent Name", value: agentDisplayName },
               { label: "Status", value: agent.status },
               { label: "Last Keepalive", value: agent.last_keepalive },
               { label: "Platform / OS", value: agent.platform },

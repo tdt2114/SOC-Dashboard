@@ -4,6 +4,7 @@ import argparse
 import http.cookiejar
 import json
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -155,7 +156,21 @@ def run(args: argparse.Namespace) -> list[str]:
         assert_status(response, 200, route)
         assert_true(path_of(response.url) == route, f"{route}: unexpectedly landed at {response.url}")
         assert_true(marker in response.body, f"{route}: missing marker {marker!r}")
+        if route == "/alerts":
+            assert_true("Showing" in response.body, "alerts page missing pagination summary")
+            assert_true("Next" in response.body, "alerts page missing Next pagination action")
         checks.append(f"{route} renders")
+
+        if route == "/alerts":
+            match = re.search(r'href="/alerts/([^"]+)"', response.body)
+            if match:
+                detail_path = f"/alerts/{match.group(1)}"
+                detail = request(auth_opener, "GET", f"{frontend}{detail_path}")
+                assert_status(detail, 200, detail_path)
+                assert_true("Alert Triage" in detail.body, "alert detail missing Alert Triage eyebrow")
+                assert_true("Back to alerts" in detail.body, "alert detail missing Back to alerts action")
+                assert_true("Raw JSON" in detail.body, "alert detail missing Raw JSON section")
+                checks.append("alert detail renders with back action")
 
     export_routes = [
         "/api/exports/alerts.csv",

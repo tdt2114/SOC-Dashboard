@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { AppShell } from "@/components/AppShell";
 import { ErrorState } from "@/components/ErrorState";
 import { SeverityBadge } from "@/components/SeverityBadge";
+import { getAgentDisplayName } from "@/lib/agentDisplay";
 import { getCurrentUserFromCookies, getDashboardSummaryFromCookies } from "@/lib/auth";
 
 function formatNumber(value: number) {
@@ -91,7 +92,7 @@ export default async function DashboardPage() {
                         </Link>
                       </td>
                       <td><SeverityBadge value={alert.severity_label} /></td>
-                      <td>{alert.agent.name || "N/A"}</td>
+                      <td>{getAgentDisplayName(alert.agent)}</td>
                       <td>{alert.rule.id || "N/A"}</td>
                       <td>{alert.rule.description || "N/A"}</td>
                     </tr>

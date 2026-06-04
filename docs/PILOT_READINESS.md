@@ -91,6 +91,8 @@ It checks:
 - frontend `/login`
 - stale-cookie redirect behavior
 - authenticated dashboard, alerts, cases, users, audit logs, settings
+- alerts pagination summary and next action
+- alert detail back action and raw JSON section
 - CSV exports for alerts, cases, and audit logs
 
 Role checks:

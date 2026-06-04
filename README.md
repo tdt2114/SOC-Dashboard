@@ -121,6 +121,8 @@ The script verifies:
 - login page
 - stale-cookie redirect behavior
 - authenticated dashboard, alerts, cases, users, audit logs, and settings
+- alerts pagination summary and next action
+- alert detail back action
 - CSV exports
 
 ## Seeded Accounts
