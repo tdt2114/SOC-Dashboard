@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import { AccessDeniedState } from "@/components/AccessDeniedState";
 import { AppShell } from "@/components/AppShell";
 import { EmptyState } from "@/components/EmptyState";
 import { ErrorState } from "@/components/ErrorState";
@@ -103,6 +104,18 @@ function getDetailEntries(item: AuditLogItem) {
   }));
 }
 
+function buildAuditExportHref({ action, q }: { action: string; q: string }) {
+  const params = new URLSearchParams();
+  if (action) {
+    params.set("action", action);
+  }
+  if (q) {
+    params.set("q", q);
+  }
+  const suffix = params.toString();
+  return `/api/exports/audit-logs.csv${suffix ? `?${suffix}` : ""}`;
+}
+
 export default async function AuditLogsPage({
   searchParams
 }: {
@@ -119,7 +132,16 @@ export default async function AuditLogsPage({
   }
 
   if (!currentUser.is_superuser) {
-    redirect("/alerts");
+    return (
+      <AppShell title="Audit Logs" eyebrow="Superadmin" currentUser={currentUser}>
+        <div className="panel">
+          <AccessDeniedState
+            requiredRole="Superadmin"
+            description="Audit logs expose account and authentication history, so they are only shown to superadmin users."
+          />
+        </div>
+      </AppShell>
+    );
   }
 
   const action = searchParams?.action || "";
@@ -142,7 +164,12 @@ export default async function AuditLogsPage({
               <h3>System Audit Trail</h3>
               <p>Track recent authentication and account-management actions.</p>
             </div>
-            <p>{auditLogs.total} records</p>
+            <div className="panel-header-actions">
+              <p>{auditLogs.total} records</p>
+              <a href={buildAuditExportHref({ action, q })} className="text-link">
+                Export CSV
+              </a>
+            </div>
           </div>
 
           <form className="filter-grid filter-grid-agents audit-filter-form" action="/audit-logs">
@@ -170,6 +197,8 @@ export default async function AuditLogsPage({
             <EmptyState
               title="No audit logs found"
               description="Try a broader filter or generate a few auth or user-management actions first."
+              actionHref="/users"
+              actionLabel="Open user management"
             />
           ) : (
             <div className="table-scroll">
@@ -178,7 +207,7 @@ export default async function AuditLogsPage({
                   <tr>
                     <th>Time</th>
                     <th>Action</th>
-                    <th>Actor -> Target</th>
+                    <th>Actor to Target</th>
                     <th>Entity</th>
                     <th>Details</th>
                   </tr>
@@ -227,6 +256,8 @@ export default async function AuditLogsPage({
           <ErrorState
             title="Unable to load audit logs"
             description={error instanceof Error ? error.message : "Unknown audit log error"}
+            actionHref="/dashboard"
+            actionLabel="Back to dashboard"
           />
         </div>
       </AppShell>

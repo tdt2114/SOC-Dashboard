@@ -8,8 +8,10 @@ import {
   AuthUser,
   CaseDetail,
   CaseListResponse,
+  DashboardSummaryResponse,
   NotificationListResponse,
   SavedSearchListResponse,
+  SystemSettingsResponse,
   UserAdminListResponse
 } from "@/lib/types";
 
@@ -178,6 +180,18 @@ export async function getAuditLogsFromCookies(params: {
   });
 }
 
+export async function getDashboardSummaryFromCookies(): Promise<DashboardSummaryResponse> {
+  return authorizedJsonFetch<DashboardSummaryResponse>("/api/dashboard/summary", {
+    method: "GET"
+  });
+}
+
+export async function getSystemSettingsFromCookies(): Promise<SystemSettingsResponse> {
+  return authorizedJsonFetch<SystemSettingsResponse>("/api/settings/system", {
+    method: "GET"
+  });
+}
+
 export async function getAlertWorkflowFromCookies(alertId: string): Promise<AlertWorkflowResponse> {
   return authorizedJsonFetch<AlertWorkflowResponse>(`/api/alerts/${encodeURIComponent(alertId)}/workflow`, {
     method: "GET"
@@ -319,6 +333,12 @@ export async function addCaseCommentAgainstBackend(caseId: number, body: string)
   });
 }
 
+export async function exportCsvFromBackend(path: string): Promise<string> {
+  return authorizedTextFetch(path, {
+    method: "GET"
+  });
+}
+
 export async function markNotificationReadAgainstBackend(notificationId: number): Promise<void> {
   await authorizedVoidFetch(`/api/notifications/${notificationId}/read`, {
     method: "POST"
@@ -359,6 +379,17 @@ async function authorizedVoidFetch(
   }
 ): Promise<void> {
   await authorizedFetch(path, init);
+}
+
+async function authorizedTextFetch(
+  path: string,
+  init: {
+    method: string;
+    body?: string;
+  }
+): Promise<string> {
+  const response = await authorizedFetch(path, init);
+  return response.text();
 }
 
 async function authorizedFetch(

@@ -6,6 +6,11 @@ import { SidebarNavLink } from "@/components/SidebarNavLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { UserDropdown } from "@/components/UserDropdown";
 
+type NavItem = {
+  href: string;
+  label: string;
+};
+
 export function AppShell({
   title,
   eyebrow,
@@ -19,18 +24,33 @@ export function AppShell({
 }) {
   const canUseAnalystWorkflow =
     currentUser?.is_superuser || currentUser?.roles.some((role) => role === "admin" || role === "analyst");
-  const navItems = [
-    { href: "/alerts", label: "Alerts" },
-    { href: "/agents", label: "Agents" }
+  const navSections: Array<{ title: string; items: NavItem[] }> = [
+    {
+      title: "Operations",
+      items: [
+        { href: "/dashboard", label: "Dashboard" },
+        { href: "/alerts", label: "Alerts" },
+        { href: "/agents", label: "Agents" }
+      ]
+    }
   ];
 
   if (canUseAnalystWorkflow) {
-    navItems.push({ href: "/cases", label: "Cases" });
+    navSections.push({
+      title: "Workflow",
+      items: [{ href: "/cases", label: "Cases" }]
+    });
   }
 
   if (currentUser?.is_superuser) {
-    navItems.push({ href: "/users", label: "Users" });
-    navItems.push({ href: "/audit-logs", label: "Audit Logs" });
+    navSections.push({
+      title: "Administration",
+      items: [
+        { href: "/users", label: "Users" },
+        { href: "/audit-logs", label: "Audit Logs" },
+        { href: "/settings", label: "Settings" }
+      ]
+    });
   }
 
   return (
@@ -39,17 +59,26 @@ export function AppShell({
         <div className="brand">
           <span className="brand-mark">SOC</span>
           <div>
-            <p className="eyebrow">Repo B MVP</p>
+            <p className="eyebrow">Repo B Operations</p>
             <h1>soc-dashboard</h1>
           </div>
         </div>
         <nav className="nav">
-          {navItems.map((item) => (
-            <SidebarNavLink key={item.href} href={item.href} label={item.label} />
+          {navSections.map((section) => (
+            <div className="nav-section" key={section.title}>
+              <p className="nav-section-title">{section.title}</p>
+              {section.items.map((item) => (
+                <SidebarNavLink
+                  key={item.href}
+                  href={item.href}
+                  label={item.label}
+                />
+              ))}
+            </div>
           ))}
         </nav>
         <p className="sidebar-note">
-          Indexer-first for alerts and search. API-assisted for agent inventory.
+          Live SOC workspace with Indexer search, Wazuh agent context, cases, exports, and admin audit controls.
         </p>
       </aside>
 

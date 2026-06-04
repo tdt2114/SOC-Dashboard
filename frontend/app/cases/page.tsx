@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AccessDeniedState } from "@/components/AccessDeniedState";
 import { AppShell } from "@/components/AppShell";
 import { CaseCreateForm } from "@/components/CaseCreateForm";
 import { EmptyState } from "@/components/EmptyState";
@@ -19,10 +20,27 @@ function formatDate(value: string) {
   }).format(date);
 }
 
+function canUseCases(currentUser: NonNullable<Awaited<ReturnType<typeof getCurrentUserFromCookies>>>) {
+  return currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
+}
+
 export default async function CasesPage() {
   const currentUser = await getCurrentUserFromCookies();
   if (!currentUser) {
     redirect("/login");
+  }
+
+  if (!canUseCases(currentUser)) {
+    return (
+      <AppShell title="Cases" eyebrow="Analyst Workflow" currentUser={currentUser}>
+        <section className="panel">
+          <AccessDeniedState
+            requiredRole="Analyst or admin"
+            description="Cases are reserved for investigation workflow users. Alerts and agents remain available for monitoring-only accounts."
+          />
+        </section>
+      </AppShell>
+    );
   }
 
   try {
@@ -46,10 +64,18 @@ export default async function CasesPage() {
               <h3>Case List</h3>
               <p>{cases.total} active records in the case workspace.</p>
             </div>
+            <a href="/api/exports/cases.csv" className="text-link">
+              Export CSV
+            </a>
           </div>
 
           {cases.items.length === 0 ? (
-            <EmptyState title="No cases yet" description="Create a case from here or directly from an alert detail page." />
+            <EmptyState
+              title="No cases yet"
+              description="Create a case from here or directly from an alert detail page."
+              actionHref="/alerts"
+              actionLabel="Review alerts"
+            />
           ) : (
             <div className="table-scroll">
               <table className="data-table">
@@ -92,6 +118,8 @@ export default async function CasesPage() {
           <ErrorState
             title="Cases are unavailable"
             description={error instanceof Error ? error.message : "Unknown case loading error"}
+            actionHref="/dashboard"
+            actionLabel="Back to dashboard"
           />
         </section>
       </AppShell>

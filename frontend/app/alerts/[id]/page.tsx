@@ -187,6 +187,8 @@ export default async function AlertDetailPage({
           <ErrorState
             title="Alert detail is unavailable"
             description={`${message}. Enable MOCK_MODE=true for standalone testing or start Repo A for live data.`}
+            actionHref="/alerts"
+            actionLabel="Back to alerts"
           />
         </section>
       </AppShell>

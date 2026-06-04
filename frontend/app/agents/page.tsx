@@ -63,11 +63,15 @@ export default async function AgentsPage({
           <ErrorState
             title="Agent list is unavailable"
             description={`${loadError}. Use MOCK_MODE=true for standalone Repo B testing, or start Repo A for live integration.`}
+            actionHref="/dashboard"
+            actionLabel="Back to dashboard"
           />
         ) : result && result.items.length === 0 ? (
           <EmptyState
             title="No agents matched the current filters"
             description="Confirm Wazuh API credentials are valid and that at least one agent is enrolled."
+            actionHref="/agents"
+            actionLabel="Reset filters"
           />
         ) : (
           <div className="table-scroll">

@@ -16,6 +16,17 @@ function getParam(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function buildExportHref(filters: Record<string, string>) {
+  const queryParams = new URLSearchParams();
+  for (const [key, value] of Object.entries(filters)) {
+    if (value) {
+      queryParams.set(key, value);
+    }
+  }
+  const suffix = queryParams.toString();
+  return `/api/exports/alerts.csv${suffix ? `?${suffix}` : ""}`;
+}
+
 export default async function AlertsPage({
   searchParams
 }: {
@@ -105,19 +116,28 @@ export default async function AlertsPage({
 
       <section className="panel">
         <div className="panel-header">
-          <h3>Indexed Alerts</h3>
-          <p>{result ? `${result.total} results from Repo A data sources.` : "Alert data is currently unavailable."}</p>
+          <div>
+            <h3>Indexed Alerts</h3>
+            <p>{result ? `${result.total} results from Repo A data sources.` : "Alert data is currently unavailable."}</p>
+          </div>
+          <a href={buildExportHref(currentFilters)} className="text-link">
+            Export CSV
+          </a>
         </div>
 
         {loadError ? (
           <ErrorState
             title="Alert feed is unavailable"
             description={`${loadError}. Use MOCK_MODE=true for standalone Repo B testing, or start Repo A for live integration.`}
+            actionHref="/dashboard"
+            actionLabel="Back to dashboard"
           />
         ) : result && result.items.length === 0 ? (
           <EmptyState
             title="No alerts matched the current filter set"
             description="Confirm Repo A is producing alerts and that the backend env points to the correct Indexer."
+            actionHref="/alerts"
+            actionLabel="Reset filters"
           />
         ) : (
           <div className="table-scroll">

@@ -1,236 +1,170 @@
 # soc-dashboard
 
-Repo B MVP scaffold for consuming data from Repo A.
+Repo B is the product layer on top of Repo A Wazuh data. It keeps detection and raw security data in Repo A, while Repo B owns the dashboard, user management, analyst workflow, audit trail, cases, exports, and operational UX.
 
-## Scope locked by plan
+## Current Scope
 
-This scaffold follows:
+Implemented:
 
-- `Plan/RepoA-to-RepoB-Contract.md`
-- `Plan/RepoB-MVP-Spec.md`
+- Alert list and alert detail from Wazuh Indexer
+- Agent inventory and agent detail from Wazuh API
+- Mock mode for standalone Repo B testing
+- Live mode for Repo A integration
+- PostgreSQL app database
+- Alembic migrations
+- Internal auth with access and refresh tokens
+- Role model: `viewer`, `analyst`, `admin`, `superadmin`
+- User management for superadmin
+- Profile password change
+- Audit logs
+- Saved searches
+- Alert bookmark, assignment, notes, and in-app notifications
+- Case list/detail, case comments, and alert-to-case linking
+- Dashboard summary
+- Read-only settings page
+- CSV exports
+- Loading, empty, error, and access-denied states
 
-The current repo only covers the MVP baseline:
+Intentionally not included in this phase:
 
-- Alert list
-- Alert detail
-- Agent list
-- PostgreSQL foundation
-- Alembic scaffold
+- AI enrichment
+- SOAR or destructive active response
+- Slack, Telegram, or email delivery
+- VirusTotal or external enrichment
+- SSO
+- Mobile-specific UI
 
-It does not include:
-
-- AI features
-- SOAR workflows
-- Telegram or Slack delivery
-- VirusTotal enrichment
-- destructive active response
-- mobile support
-
-## Structure
+## Architecture
 
 ```text
-soc-dashboard/
-├── backend/
-│   ├── app/
-│   │   ├── core/
-│   │   ├── db/
-│   │   ├── routers/
-│   │   ├── schemas/
-│   │   └── services/
-│   ├── alembic/
-│   └── Dockerfile
-├── frontend/
-│   ├── app/
-│   ├── components/
-│   ├── lib/
-│   └── Dockerfile
-├── .env.example
-└── docker-compose.yml
+User
+  |
+  v
+Next.js frontend
+  |
+  v
+FastAPI backend
+  |
+  +-- PostgreSQL
+  |     users, roles, refresh tokens, workflow data, audit logs, cases
+  |
+  +-- Wazuh Indexer
+  |     alerts and search data
+  |
+  +-- Wazuh API
+        agent inventory and metadata
 ```
 
-## Backend contract
+## Local Startup
 
-### Internal endpoints
-
-- `GET /health`
-- `GET /api/alerts`
-- `GET /api/alerts/{id}`
-- `GET /api/agents`
-- `POST /api/auth/login`
-- `POST /api/auth/refresh`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
-
-### Data sources
-
-- Wazuh Indexer for alert list, detail, search, filter
-- Wazuh API for agent list and agent status
-
-### Normalized alert fields
-
-- `timestamp`
-- `agent.name`
-- `agent.id`
-- `rule.id`
-- `rule.level`
-- `rule.description`
-- `data.srcip`
-- `syscheck.path`
-
-Missing fields are handled as optional and rendered as `N/A`.
-
-### App database foundation
-
-Repo B now includes:
-
-- PostgreSQL in `docker-compose.yml`
-- async SQLAlchemy engine and session
-- Alembic scaffold for future migrations
-
-## Frontend pages
-
-- `/alerts`
-- `/alerts/[id]`
-- `/agents`
-
-## Local startup
-
-1. Copy `.env.example` to `.env`
-2. For standalone Repo B testing, keep `MOCK_MODE=true`
-3. For live integration, set `MOCK_MODE=false` and adjust the Wazuh URLs and credentials if needed
-4. Run `docker compose up --build`
-5. Open `http://localhost:3000`
-
-## Database startup
-
-By default the stack now starts:
-
-- `soc-postgres`
-- `soc-backend`
-- `soc-frontend`
-
-The backend health endpoint now reports:
-
-- app mode: `mock` or `live`
-- database status: `ok` or `unavailable`
-
-## Alembic
-
-Migration scaffold lives in:
-
-- `backend/alembic.ini`
-- `backend/alembic/`
-
-Typical commands:
+1. Copy `.env.example` to `.env` if needed.
+2. Set `MOCK_MODE=true` for standalone testing, or `MOCK_MODE=false` for live Repo A integration.
+3. Start the stack:
 
 ```bash
-cd backend
-alembic revision -m "create users table"
-alembic upgrade head
+docker compose up --build
 ```
 
-Initial schema already scaffolded in this repo:
-
-- `departments`
-- `roles`
-- `users`
-- `user_roles`
-- `refresh_tokens` after the second migration
-
-To apply it inside the running backend container:
+4. Apply migrations if the database is new:
 
 ```bash
-docker exec -it soc-backend sh
-alembic upgrade head
+docker compose exec soc-backend alembic upgrade head
 ```
 
-To verify from PostgreSQL:
+5. Seed initial accounts:
 
 ```bash
-docker exec -it soc-postgres psql -U soc_dashboard -d soc_dashboard
-\dt
+docker compose exec soc-backend python -m app.scripts.seed_initial_data
 ```
 
-## Seeded accounts
+6. Open:
 
-Initial seed script creates:
+```text
+http://localhost:3000
+```
 
-- 1 default department
+The frontend Docker image runs `next build` during image build and starts with `next start`.
+
+## Health Checks
+
+Backend:
+
+```bash
+curl http://localhost:8000/health
+```
+
+Expected:
+
+```json
+{"status":"ok","mode":"mock-or-live","database":"ok"}
+```
+
+Frontend:
+
+```bash
+curl -I http://localhost:3000/login
+```
+
+Expected: HTTP `200`.
+
+## Automated Smoke Test
+
+Run a pilot smoke test after the stack is up:
+
+```bash
+python scripts/smoke_pilot.py --username <superadmin-username> --password <superadmin-password>
+```
+
+The script verifies:
+
+- backend health
+- login page
+- stale-cookie redirect behavior
+- authenticated dashboard, alerts, cases, users, audit logs, and settings
+- CSV exports
+
+## Seeded Accounts
+
+The seed script creates:
+
+- default department
 - roles: `admin`, `analyst`, `viewer`
-- 1 `admin` account
-- 1 `superadmin` account
+- one admin account
+- one superadmin account
 
-Seed command:
-
-```bash
-docker exec -it soc-backend sh -lc "python -m app.scripts.seed_initial_data"
-```
-
-Credentials come from `.env`:
+Credential values come from `.env`:
 
 - `SEED_ADMIN_USERNAME`
 - `SEED_ADMIN_PASSWORD`
 - `SEED_SUPERADMIN_USERNAME`
 - `SEED_SUPERADMIN_PASSWORD`
 
-Change these defaults immediately outside local dev.
+Change these values outside local development.
 
-## Test modes
+## Main Routes
 
-### Mode A: Standalone Repo B test
+- `/login`
+- `/dashboard`
+- `/alerts`
+- `/alerts/[id]`
+- `/agents`
+- `/agents/[id]`
+- `/cases`
+- `/cases/[id]`
+- `/users`
+- `/audit-logs`
+- `/settings`
+- `/profile`
 
-Use:
+## Role Behavior
 
-- `MOCK_MODE=true`
+- `viewer`: dashboard, alerts, agents
+- `analyst`: viewer access plus saved searches, bookmarks, assignments, notes, cases
+- `admin`: analyst workflow access
+- `superadmin`: all admin screens, user management, audit logs, settings
 
-What you can verify:
+Backend endpoints still enforce permissions. Frontend access-denied states are UX support, not the security boundary.
 
-- backend boots
-- frontend boots
-- `/health` returns `mode: mock`
-- `/alerts` renders fixture alerts
-- `/agents` renders fixture agents
+## Pilot Readiness
 
-### Mode B: Live integration test
-
-Use:
-
-- `MOCK_MODE=false`
-
-What you need:
-
-- Repo A running and reachable on `:55000` and `:9200`
-
-What you can verify:
-
-- live alerts from Indexer
-- live agents from Wazuh API
-- real contract checks for `100001`, `100064`, and `550`
-
-## Connection modes
-
-### Mode 1: Repo A and Repo B run separately
-
-Use the defaults in `.env.example`:
-
-- `WAZUH_API_BASE_URL=https://host.docker.internal:55000`
-- `WAZUH_INDEXER_URL=https://host.docker.internal:9200`
-
-This is the least disruptive mode because Repo A does not need compose changes.
-
-### Mode 2: Repo A and Repo B share one compose network
-
-Switch the env values to:
-
-- `WAZUH_API_BASE_URL=https://wazuh-manager:55000`
-- `WAZUH_INDEXER_URL=https://wazuh-indexer:9200`
-
-Use this mode only when you intentionally merge the runtime network.
-
-## Next implementation step
-
-This scaffold is ready for the next phase:
-
-- connect to live Repo A data
-- verify alerts `100001`, `100064`, and `550`
-- add auth and users modules on top of PostgreSQL foundation
+See [docs/PILOT_READINESS.md](docs/PILOT_READINESS.md).

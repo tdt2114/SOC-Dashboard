@@ -122,6 +122,30 @@ export interface AgentDetailResponse {
   monitoring_context: AgentMonitoringContext;
 }
 
+export interface DashboardSummaryResponse {
+  total_alerts_24h: number;
+  high_or_critical_alerts_24h: number;
+  active_agents: number;
+  disconnected_agents: number;
+  total_agents: number;
+  open_cases: number;
+  assigned_to_me_alerts: number;
+  recent_high_alerts: AlertListItem[];
+}
+
+export interface SystemSettingsResponse {
+  app_env: string;
+  mode: string;
+  database: string;
+  default_time_range: string;
+  default_page_size: number;
+  max_page_size: number;
+  verify_tls: boolean;
+  wazuh_api_base_url: string;
+  wazuh_indexer_url: string;
+  wazuh_alert_index_pattern: string;
+}
+
 export interface AuthUser {
   id: number;
   username: string;

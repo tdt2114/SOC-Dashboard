@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AccessDeniedState } from "@/components/AccessDeniedState";
 import { AppShell } from "@/components/AppShell";
 import { CaseDetailActions } from "@/components/CaseDetailActions";
 import { ErrorState } from "@/components/ErrorState";
@@ -19,10 +20,27 @@ function formatDate(value: string) {
   }).format(date);
 }
 
+function canUseCases(currentUser: NonNullable<Awaited<ReturnType<typeof getCurrentUserFromCookies>>>) {
+  return currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
+}
+
 export default async function CaseDetailPage({ params }: { params: { id: string } }) {
   const currentUser = await getCurrentUserFromCookies();
   if (!currentUser) {
     redirect("/login");
+  }
+
+  if (!canUseCases(currentUser)) {
+    return (
+      <AppShell title="Case Detail" eyebrow="Analyst Workflow" currentUser={currentUser}>
+        <section className="panel">
+          <AccessDeniedState
+            requiredRole="Analyst or admin"
+            description="Case details include investigation notes and workflow actions, so they are limited to analyst and admin roles."
+          />
+        </section>
+      </AppShell>
+    );
   }
 
   try {
@@ -127,6 +145,8 @@ export default async function CaseDetailPage({ params }: { params: { id: string 
           <ErrorState
             title="Case detail is unavailable"
             description={error instanceof Error ? error.message : "Unknown case detail error"}
+            actionHref="/cases"
+            actionLabel="Back to cases"
           />
         </section>
       </AppShell>

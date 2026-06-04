@@ -87,6 +87,8 @@ export default async function AgentDetailPage({
             <EmptyState
               title="No alerts are currently tied to this agent"
               description="This host is enrolled, but no recent alerts matched the current monitoring window."
+              actionHref="/alerts"
+              actionLabel="Open alerts"
             />
           ) : (
             <div className="table-scroll">
@@ -139,6 +141,8 @@ export default async function AgentDetailPage({
           <ErrorState
             title="Agent detail is unavailable"
             description={`${message}. Enable MOCK_MODE=true for standalone testing or start Repo A for live data.`}
+            actionHref="/agents"
+            actionLabel="Back to agents"
           />
         </section>
       </AppShell>
