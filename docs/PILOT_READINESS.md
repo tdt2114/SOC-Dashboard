@@ -142,6 +142,16 @@ The suite covers:
 - Role permissions: seeded viewer, analyst, and non-superuser admin access boundaries
 - Frontend: stale-cookie redirect, protected routes, alert detail back action, alert pagination, compact saved-search UI, agent dropdown, role navigation/access states, saved-search proxy cleanup, and case proxy workflow
 
+## CI
+
+GitHub Actions workflow:
+
+```text
+.github/workflows/pilot-regression.yml
+```
+
+The workflow runs in mock mode using `.env.ci`, starts Docker Compose from a clean CI volume, applies migrations, seeds CI users, runs frontend audit, smoke checks, and the pilot regression suite.
+
 ## Known Gaps Before Production
 
 - No SSO.
@@ -150,8 +160,8 @@ The suite covers:
 - No Redis/session store split.
 - No log retention policy.
 - No formal secret rotation procedure.
-- Frontend dependencies should be reviewed because `npm audit` currently reports one moderate and one high advisory during image build.
-- Next font build may retry Google Fonts during Docker build; consider local font bundling if builds must work fully offline.
+- Frontend dependency advisories were reviewed on 2026-06-08; `npm audit` currently reports 0 vulnerabilities.
+- Frontend now uses a system font stack and does not depend on Google Fonts during Docker build.
 
 ## Pilot Exit Criteria
 
@@ -167,8 +177,7 @@ The pilot can be considered successful when:
 
 ## Recommended Next Work
 
-1. Replace remote Google font dependency with a local font strategy.
-2. Review and address npm advisories.
-3. Add a CI job for smoke and pilot regression tests.
-4. Add retention/archival policy for closed regression and pilot cases.
-5. Add a formal production restore approval procedure.
+1. Run the new GitHub Actions workflow on the remote branch/PR and capture the result.
+2. Add retention/archival policy for closed regression and pilot cases.
+3. Add a formal production restore approval procedure.
+4. Re-run live mode verification with Repo A before pilot handoff if `.env` is switched back from mock mode.

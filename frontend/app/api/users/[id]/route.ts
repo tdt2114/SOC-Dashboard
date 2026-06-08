@@ -4,9 +4,10 @@ import { updateUserAgainstBackend } from "@/lib/auth";
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const payload = (await request.json()) as {
       email?: string;
       full_name?: string | null;
@@ -15,7 +16,7 @@ export async function PATCH(
       is_superuser?: boolean;
       roles?: string[];
     };
-    await updateUserAgainstBackend(Number(params.id), payload);
+    await updateUserAgainstBackend(Number(id), payload);
     return NextResponse.json({ ok: true });
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unable to update user";

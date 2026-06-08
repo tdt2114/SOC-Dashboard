@@ -74,7 +74,7 @@ export async function logoutAgainstBackend(refreshToken: string): Promise<void> 
 }
 
 export async function getCurrentUserFromCookies(): Promise<AuthUser | null> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const accessToken = cookieStore.get(ACCESS_COOKIE_NAME)?.value;
 
   if (!accessToken) {
@@ -399,7 +399,7 @@ async function authorizedFetch(
     body?: string;
   }
 ): Promise<Response> {
-  const cookieStore = cookies();
+  const cookieStore = await cookies();
   const accessToken = cookieStore.get(ACCESS_COOKIE_NAME)?.value;
 
   if (!accessToken) {

@@ -4,10 +4,11 @@ import { getCaseFromCookies, updateCaseAgainstBackend } from "@/lib/auth";
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const data = await getCaseFromCookies(Number(params.id));
+    const { id } = await params;
+    const data = await getCaseFromCookies(Number(id));
     return NextResponse.json(data);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unable to load case";
@@ -17,9 +18,10 @@ export async function GET(
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const payload = (await request.json()) as {
       title?: string;
       description?: string | null;
@@ -27,7 +29,7 @@ export async function PATCH(
       severity?: string;
       owner_user_id?: number | null;
     };
-    const data = await updateCaseAgainstBackend(Number(params.id), payload);
+    const data = await updateCaseAgainstBackend(Number(id), payload);
     return NextResponse.json(data);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unable to update case";

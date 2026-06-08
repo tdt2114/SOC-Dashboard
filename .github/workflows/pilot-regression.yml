@@ -1,0 +1,81 @@
+name: Pilot Regression
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  pilot-regression:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      PILOT_TEST_USERNAME: ci_superadmin
+      PILOT_TEST_PASSWORD: CiSuperAdmin123!ChangeMe
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Prepare CI environment
+        run: cp .env.ci .env
+
+      - name: Reset CI Docker state
+        run: docker compose down -v --remove-orphans
+
+      - name: Frontend dependency audit
+        working-directory: frontend
+        run: |
+          npm ci
+          npm audit --audit-level=moderate
+
+      - name: Build and start stack
+        run: docker compose up -d --build
+
+      - name: Wait for services
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://localhost:8000/health >/dev/null && curl -fsSI http://localhost:3000/login >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose ps
+          docker compose logs
+          exit 1
+
+      - name: Apply migrations
+        run: docker compose exec -T soc-backend alembic upgrade head
+
+      - name: Seed accounts
+        run: docker compose exec -T soc-backend python -m app.scripts.seed_initial_data
+
+      - name: Pilot smoke test
+        run: python scripts/smoke_pilot.py --username "$PILOT_TEST_USERNAME" --password "$PILOT_TEST_PASSWORD"
+
+      - name: Pilot regression tests
+        run: python -m unittest discover -s tests -v
+
+      - name: Docker logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Cleanup
+        if: always()
+        run: docker compose down -v

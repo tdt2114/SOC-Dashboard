@@ -68,6 +68,27 @@ PASS: /api/exports/cases.csv exports CSV
 PASS: /api/exports/audit-logs.csv exports CSV
 ```
 
+Local font strategy verification:
+
+```text
+Removed frontend next/font/google usage.
+Frontend font stack now uses Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif.
+
+docker compose build soc-frontend
+Compiled successfully
+
+python -m unittest discover -s tests -v
+Ran 13 tests in 5.157s
+OK
+
+python scripts/smoke_pilot.py --username <superadmin-username> --password <superadmin-password>
+PASS: backend health ok (live)
+PASS: frontend login succeeds
+PASS: /alerts renders
+PASS: alert detail renders with back action
+PASS: /api/exports/alerts.csv exports CSV
+```
+
 Backup verification:
 
 ```text
@@ -104,6 +125,105 @@ Issues found and fixed:
 
 Known remaining operational work:
 
-- Replace remote font dependency with a local font strategy if offline builds are required.
-- Review frontend dependency advisories.
 - Add CI to run smoke and pilot regression tests automatically.
+
+## 2026-06-08
+
+Environment:
+
+- Mode: mock
+- Stack: Docker Compose
+- Backend: `http://localhost:8000`
+- Frontend: `http://localhost:3000`
+
+Dependency/build review:
+
+```text
+npm audit --json
+vulnerabilities: 0 total
+
+npm ls next react react-dom postcss
+next@16.2.7
+react@19.2.7
+react-dom@19.2.7
+postcss@8.5.15
+
+docker compose build soc-frontend
+Image soc-dashboard-soc-frontend Built
+```
+
+Build hardening completed:
+
+- Added `frontend/package-lock.json`.
+- Switched frontend Docker install step from `npm install` to `npm ci`.
+- Migrated Next.js route handlers and dynamic pages for async `params`.
+- Migrated server cookie reads to async `cookies()`.
+- Replaced deprecated `middleware.ts` convention with `proxy.ts`.
+
+Latest automated results:
+
+```text
+python -m unittest discover -s tests -v
+Ran 13 tests in 2.540s
+OK
+
+python scripts/smoke_pilot.py --username <superadmin-username> --password <superadmin-password>
+PASS: backend health ok (mock)
+PASS: login page renders
+PASS: stale cookie redirects to login
+PASS: frontend login succeeds
+PASS: /dashboard renders
+PASS: /alerts renders
+PASS: alert detail renders with back action
+PASS: /cases renders
+PASS: /users renders
+PASS: /audit-logs renders
+PASS: /settings renders
+PASS: /api/exports/alerts.csv exports CSV
+PASS: /api/exports/cases.csv exports CSV
+PASS: /api/exports/audit-logs.csv exports CSV
+```
+
+Current remaining operational work:
+
+- Re-run live mode verification with Repo A before handoff if the stack is switched from mock mode back to live mode.
+
+CI workflow added:
+
+```text
+.github/workflows/pilot-regression.yml
+```
+
+The workflow runs frontend audit, Docker Compose build/start, migrations, seed, smoke test, and pilot regression tests in mock mode using `.env.ci`.
+
+Local post-CI-workflow verification:
+
+```text
+docker compose up -d --build
+docker compose exec -T soc-backend alembic upgrade head
+docker compose exec -T soc-backend python -m app.scripts.seed_initial_data
+python scripts/smoke_pilot.py --username <superadmin-username> --password <superadmin-password>
+PASS: backend health ok (mock)
+PASS: login page renders
+PASS: stale cookie redirects to login
+PASS: frontend login succeeds
+PASS: /dashboard renders
+PASS: /alerts renders
+PASS: alert detail renders with back action
+PASS: /cases renders
+PASS: /users renders
+PASS: /audit-logs renders
+PASS: /settings renders
+PASS: /api/exports/alerts.csv exports CSV
+PASS: /api/exports/cases.csv exports CSV
+PASS: /api/exports/audit-logs.csv exports CSV
+
+python -m unittest discover -s tests -v
+Ran 13 tests in 2.595s
+OK
+```
+
+Current remaining operational work:
+
+- Run the GitHub Actions workflow on the remote branch/PR and capture the result.
+- Re-run live mode verification with Repo A before handoff if the stack is switched from mock mode back to live mode.

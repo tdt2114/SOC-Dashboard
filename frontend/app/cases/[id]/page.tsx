@@ -24,7 +24,8 @@ function canUseCases(currentUser: NonNullable<Awaited<ReturnType<typeof getCurre
   return currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
 }
 
-export default async function CaseDetailPage({ params }: { params: { id: string } }) {
+export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const currentUser = await getCurrentUserFromCookies();
   if (!currentUser) {
     redirect("/login");
@@ -44,7 +45,7 @@ export default async function CaseDetailPage({ params }: { params: { id: string 
   }
 
   try {
-    const item = await getCaseFromCookies(Number(params.id));
+    const item = await getCaseFromCookies(Number(id));
 
     return (
       <AppShell title="Case Detail" eyebrow="Analyst Workflow" currentUser={currentUser}>

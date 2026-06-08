@@ -20,14 +20,15 @@ import { getAlert, getAlerts } from "@/lib/api";
 export default async function AlertDetailPage({
   params
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const currentUser = await getCurrentUserFromCookies();
   if (!currentUser) {
     redirect("/login");
   }
   try {
-    const alert = await getAlert(params.id);
+    const alert = await getAlert(id);
     const relatedAlerts =
       alert.agent.id || alert.agent.name
         ? await getAlerts({
@@ -38,10 +39,10 @@ export default async function AlertDetailPage({
             agent_name: alert.agent.id ? undefined : alert.agent.name || undefined
           })
         : null;
-    const workflow = await getAlertWorkflowFromCookies(params.id);
+    const workflow = await getAlertWorkflowFromCookies(id);
     const canBookmark =
       currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
-    const bookmark = canBookmark ? await getAlertBookmarkFromCookies(params.id) : null;
+    const bookmark = canBookmark ? await getAlertBookmarkFromCookies(id) : null;
     const cases = canBookmark ? await getCasesFromCookies() : null;
     const moreAlertsFromAgent = (relatedAlerts?.items || []).filter((item) => item.id !== alert.id);
     const agentDisplayName = getAgentDisplayName(alert.agent);
@@ -58,7 +59,7 @@ export default async function AlertDetailPage({
               <Link href="/alerts" className="state-action state-action-compact">
                 Back to alerts
               </Link>
-              {bookmark ? <AlertBookmarkButton alertId={params.id} initialBookmark={bookmark} /> : null}
+              {bookmark ? <AlertBookmarkButton alertId={id} initialBookmark={bookmark} /> : null}
               <SeverityBadge value={alert.severity_label} />
             </div>
           </div>
@@ -169,8 +170,8 @@ export default async function AlertDetailPage({
             )}
           </section>
 
-          <AlertWorkflowPanel alertId={params.id} currentUser={currentUser} initialWorkflow={workflow} />
-          {cases ? <AlertCasePanel alertId={params.id} cases={cases} /> : null}
+          <AlertWorkflowPanel alertId={id} currentUser={currentUser} initialWorkflow={workflow} />
+          {cases ? <AlertCasePanel alertId={id} cases={cases} /> : null}
 
           <div className="code-panel">
             <div className="panel-header">

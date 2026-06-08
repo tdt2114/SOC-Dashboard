@@ -13,15 +13,16 @@ import { getAgent } from "@/lib/api";
 export default async function AgentDetailPage({
   params
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
+  const { id } = await params;
   const currentUser = await getCurrentUserFromCookies();
   if (!currentUser) {
     redirect("/login");
   }
 
   try {
-    const result = await getAgent(params.id);
+    const result = await getAgent(id);
     const { agent, recent_alerts, monitoring_context } = result;
     const agentDisplayName = getAgentDisplayName(agent);
 

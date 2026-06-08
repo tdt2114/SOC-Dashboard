@@ -65,6 +65,7 @@ MOCK_ALERTS: list[AlertDetail] = [
 ]
 
 MOCK_AGENTS: list[AgentListItem] = [
+    AgentListItem(id="000", name="wazuh-manager", status="active", last_keepalive=_iso_utc(minutes=5)),
     AgentListItem(id="001", name="SOC-Server-Dev", status="active", last_keepalive=_iso_utc(minutes=5)),
     AgentListItem(id="002", name="Windows-Pilot-01", status="disconnected", last_keepalive=_iso_utc(hours=2)),
 ]

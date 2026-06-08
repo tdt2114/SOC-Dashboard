@@ -161,6 +161,21 @@ The tests verify:
 - PostgreSQL backup/restore runbook: [docs/POSTGRES_BACKUP_RESTORE.md](docs/POSTGRES_BACKUP_RESTORE.md)
 - Pilot verification results for report reuse: [docs/PILOT_TEST_RESULTS.md](docs/PILOT_TEST_RESULTS.md)
 
+## CI
+
+The repository includes a GitHub Actions workflow at `.github/workflows/pilot-regression.yml`.
+
+It runs on push, pull request, and manual dispatch:
+
+- prepares `.env` from `.env.ci`
+- resets CI Docker Compose state
+- runs frontend `npm ci` and `npm audit --audit-level=moderate`
+- builds and starts the Docker Compose stack in mock mode
+- applies Alembic migrations
+- seeds CI accounts
+- runs `scripts/smoke_pilot.py`
+- runs `python -m unittest discover -s tests -v`
+
 ## Seeded Accounts
 
 The seed script creates:

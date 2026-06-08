@@ -8,10 +8,11 @@ import {
 
 export async function GET(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const data = await getAlertBookmarkFromCookies(params.id);
+    const { id } = await params;
+    const data = await getAlertBookmarkFromCookies(id);
     return NextResponse.json(data);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unable to load alert bookmark";
@@ -21,10 +22,11 @@ export async function GET(
 
 export async function POST(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const data = await bookmarkAlertAgainstBackend(params.id);
+    const { id } = await params;
+    const data = await bookmarkAlertAgainstBackend(id);
     return NextResponse.json(data);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unable to bookmark alert";
@@ -34,10 +36,11 @@ export async function POST(
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const data = await unbookmarkAlertAgainstBackend(params.id);
+    const { id } = await params;
+    const data = await unbookmarkAlertAgainstBackend(id);
     return NextResponse.json(data);
   } catch (error) {
     const detail = error instanceof Error ? error.message : "Unable to remove alert bookmark";
