@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.config import get_settings
 from app.core.exceptions import UpstreamServiceError
-from app.db.models import PendingAction, Role, User, UserRole
+from app.db.models import Case, PendingAction, Role, User, UserRole
 from app.schemas.actions import (
     ACTION_COMMANDS,
     PendingActionCreateRequest,
@@ -100,6 +100,11 @@ async def create_pending_action(
             detail=f"Unsupported action_type. Allowed: {', '.join(sorted(ACTION_COMMANDS))}",
         )
 
+    if payload.case_id is not None:
+        case_exists = await session.execute(select(Case.id).where(Case.id == payload.case_id))
+        if case_exists.scalar_one_or_none() is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Linked case does not exist")
+
     item = PendingAction(
         token=secrets.token_urlsafe(32),
         action_type=action_type,
@@ -172,8 +177,18 @@ async def _execute_active_response(action: PendingAction) -> tuple[str, str]:
         )
     except UpstreamServiceError as exc:
         return "failed", f"Wazuh API error: {exc}"
+
+    data = response.get("data", {}) if isinstance(response, dict) else {}
+    affected = int(data.get("total_affected_items", 0) or 0)
+    failed = int(data.get("total_failed_items", 0) or 0)
     message = response.get("message") if isinstance(response, dict) else None
-    return "success", str(message or "Active response dispatched to Wazuh manager.")[:1000]
+    detail = str(message or f"affected={affected}, failed={failed}")[:1000]
+
+    # Only a command that actually reached at least one agent (and failed on none)
+    # counts as a successful dispatch; "not sent to any agent" must not look like success.
+    if affected >= 1 and failed == 0:
+        return "success", detail
+    return "failed", detail
 
 
 async def approve_pending_action(
