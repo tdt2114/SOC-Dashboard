@@ -9,6 +9,7 @@ import { SeverityBadge } from "@/components/SeverityBadge";
 import { getAgentDisplayName } from "@/lib/agentDisplay";
 import { getCurrentUserFromCookies, getSavedSearchesFromCookies } from "@/lib/auth";
 import { getAgents, getAlerts } from "@/lib/api";
+import { TIME_RANGE_OPTIONS, normalizeTimeRange } from "@/lib/timeRanges";
 import type { AgentListItem, SavedSearchListResponse } from "@/lib/types";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -78,7 +79,7 @@ export default async function AlertsPage({
   }
   const page = normalizePage(searchParams?.page);
   const pageSize = normalizePageSize(searchParams?.page_size);
-  const timeRange = getParam(searchParams?.time_range) || "24h";
+  const timeRange = normalizeTimeRange(getParam(searchParams?.time_range));
   const severity = getParam(searchParams?.severity);
   const agentName = getParam(searchParams?.agent_name);
   const ruleId = getParam(searchParams?.rule_id);
@@ -159,9 +160,9 @@ export default async function AlertsPage({
           <label>
             <span>Time Range</span>
             <select name="time_range" defaultValue={timeRange}>
-              <option value="1h">Last 1h</option>
-              <option value="24h">Last 24h</option>
-              <option value="7d">Last 7d</option>
+              {TIME_RANGE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </label>
           <label>

@@ -10,6 +10,14 @@ This checklist is for running Repo B as an internal pilot, not as a fully harden
 - Auth, users, roles, audit logs, analyst workflow, cases, dashboard summary, settings, and exports are implemented.
 - Stale auth cookies are handled by middleware and redirect back to login instead of causing a redirect loop.
 - Mock mode and live mode are both supported.
+- Pilot handoff, feature matrix, and roadmap docs are available:
+  - [PILOT_HANDOFF.md](PILOT_HANDOFF.md)
+  - [FEATURE_MATRIX.md](FEATURE_MATRIX.md)
+  - [ROADMAP.md](ROADMAP.md)
+- Deployment, rollback, and log sink decision docs are available:
+  - [PRODUCTION_DEPLOYMENT_CHECKLIST.md](PRODUCTION_DEPLOYMENT_CHECKLIST.md)
+  - [RELEASE_ROLLBACK_CHECKLIST.md](RELEASE_ROLLBACK_CHECKLIST.md)
+  - [LOG_SINK_DECISION.md](LOG_SINK_DECISION.md)
 
 ## Required Startup Checks
 
@@ -84,6 +92,20 @@ Before a pilot handoff or cleanup window, run the read-only case retention repor
 See [CASE_RETENTION_POLICY.md](CASE_RETENTION_POLICY.md) for regression case, pilot case, and future production retention rules.
 
 For production-like log, backup, and audit evidence retention, follow [PRODUCTION_LOG_RETENTION.md](PRODUCTION_LOG_RETENTION.md).
+
+For production-like service monitoring and log shipping, follow [PRODUCTION_MONITORING.md](PRODUCTION_MONITORING.md).
+
+For production-like deployment, release, rollback, and log-sink decisions, use:
+
+- [PRODUCTION_DEPLOYMENT_CHECKLIST.md](PRODUCTION_DEPLOYMENT_CHECKLIST.md)
+- [RELEASE_ROLLBACK_CHECKLIST.md](RELEASE_ROLLBACK_CHECKLIST.md)
+- [LOG_SINK_DECISION.md](LOG_SINK_DECISION.md)
+
+Run a local health report after startup, restore, credential rotation, or deployment:
+
+```powershell
+.\scripts\report_runtime_health.ps1
+```
 
 ## Manual Smoke Test
 
@@ -174,6 +196,7 @@ The workflow runs in mock mode using `.env.ci`, starts Docker Compose from a cle
 - No external notification channel.
 - No rate limiting.
 - No Redis/session store split.
+- No centralized production log sink yet.
 - Frontend dependency advisories were reviewed on 2026-06-08; `npm audit` currently reports 0 vulnerabilities.
 - Frontend now uses a system font stack and does not depend on Google Fonts during Docker build.
 
@@ -191,6 +214,6 @@ The pilot can be considered successful when:
 
 ## Recommended Next Work
 
-1. Run the new GitHub Actions workflow on the remote branch/PR and capture the result.
-2. Re-run live mode verification with Repo A before pilot handoff if `.env` is switched back from mock mode.
-3. Add centralized production monitoring and log shipping.
+1. Re-run live mode verification with Repo A before external pilot handoff if `.env` is switched back from mock mode.
+2. Prepare final presentation or report material from the handoff package and test evidence.
+3. Implement centralized log shipping after pilot approval.

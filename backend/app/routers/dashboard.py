@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -17,6 +17,7 @@ bearer_scheme = HTTPBearer(auto_error=False)
 
 @router.get("/summary", response_model=DashboardSummaryResponse)
 async def get_summary(
+    time_range: str = Query(default="24h"),
     credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     session: AsyncSession = Depends(get_db_session),
     settings: Settings = Depends(get_settings),
@@ -25,6 +26,6 @@ async def get_summary(
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing bearer token")
     current_user = await get_current_user_model_from_token(session, credentials.credentials)
     try:
-        return await get_dashboard_summary(session, current_user, settings)
+        return await get_dashboard_summary(session, current_user, settings, time_range=time_range)
     except UpstreamServiceError as exc:
         raise HTTPException(status_code=502, detail=f"{exc.service} unavailable: {exc.message}") from exc

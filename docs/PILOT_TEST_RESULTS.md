@@ -249,10 +249,129 @@ actions/setup-node@v4 -> actions/setup-node@v6
 
 These versions target the newer Node.js action runtime. Re-run GitHub Actions after pushing this change to confirm the warning is cleared.
 
+Remote GitHub Actions verification after retention policy and runtime updates:
+
+```text
+Workflow: Pilot Regression #3
+Trigger: push
+Branch: main
+Commit: 54a0c77
+Status: Success
+Total duration: 1m 20s
+Job: pilot-regression
+Job duration: 1m 15s
+```
+
+The updated workflow and production retention policy changes passed remote regression on GitHub Actions.
+
+Production monitoring and log shipping runbook added:
+
+```text
+docs/PRODUCTION_MONITORING.md
+scripts/report_runtime_health.ps1
+README.md and docs/PILOT_READINESS.md link the runbook and local runtime health report.
+```
+
+Pilot handoff package added:
+
+```text
+docs/PILOT_HANDOFF.md
+docs/FEATURE_MATRIX.md
+docs/ROADMAP.md
+README.md and docs/PILOT_READINESS.md link the handoff package.
+```
+
+Final pilot completion docs added:
+
+```text
+docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md
+docs/RELEASE_ROLLBACK_CHECKLIST.md
+docs/LOG_SINK_DECISION.md
+README.md and docs/PILOT_READINESS.md link the final deployment, rollback, and log-sink decision docs.
+```
+
+Final verification snapshot for pilot/report Definition of Done:
+
+```text
+git diff --check
+OK
+
+npm audit --audit-level=moderate
+found 0 vulnerabilities
+
+.\scripts\report_runtime_health.ps1
+Backend /health: {"status":"ok","mode":"mock","database":"ok"}
+Frontend /login: StatusCode: 200
+soc-postgres: healthy
+Runtime health report completed.
+
+python scripts/smoke_pilot.py --username <superadmin-username> --password <superadmin-password>
+PASS: backend health ok (mock)
+PASS: login page renders
+PASS: stale cookie redirects to login
+PASS: frontend login succeeds
+PASS: /dashboard renders
+PASS: /alerts renders
+PASS: alert detail renders with back action
+PASS: /cases renders
+PASS: /users renders
+PASS: /audit-logs renders
+PASS: /settings renders
+PASS: /api/exports/alerts.csv exports CSV
+PASS: /api/exports/cases.csv exports CSV
+PASS: /api/exports/audit-logs.csv exports CSV
+
+python -m unittest discover -s tests -v
+Ran 13 tests in 2.129s
+OK
+```
+
+Pilot/report Definition of Done:
+
+- product pages and role workflows are implemented
+- smoke and regression tests pass locally
+- GitHub Actions remote regression has passed
+- live mode has prior recorded verification with Repo A
+- backup and restore drill evidence exists
+- runtime health report exists and passes
+- retention, restore, secret rotation, deployment, rollback, monitoring, handoff, feature matrix, and roadmap docs exist
+- centralized log sink is intentionally deferred to post-pilot implementation decision
+
+Post-monitoring-runbook verification:
+
+```text
+.\scripts\report_runtime_health.ps1
+Backend /health: {"status":"ok","mode":"mock","database":"ok"}
+Frontend /login: StatusCode: 200
+soc-postgres: healthy
+Runtime health report completed.
+
+python scripts/smoke_pilot.py --username <superadmin-username> --password <superadmin-password>
+PASS: backend health ok (mock)
+PASS: login page renders
+PASS: stale cookie redirects to login
+PASS: frontend login succeeds
+PASS: /dashboard renders
+PASS: /alerts renders
+PASS: alert detail renders with back action
+PASS: /cases renders
+PASS: /users renders
+PASS: /audit-logs renders
+PASS: /settings renders
+PASS: /api/exports/alerts.csv exports CSV
+PASS: /api/exports/cases.csv exports CSV
+PASS: /api/exports/audit-logs.csv exports CSV
+
+python -m unittest discover -s tests -v
+Ran 13 tests in 2.207s
+OK
+```
+
 Current remaining operational work:
 
 - Re-run live mode verification with Repo A before handoff if the stack is switched from mock mode back to live mode.
-- Add centralized production monitoring and log shipping.
+- Prepare final presentation or report material from the handoff package and test evidence.
+- Implement centralized log shipping after pilot approval.
 
 Case retention policy added:
 

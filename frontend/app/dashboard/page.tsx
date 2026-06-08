@@ -6,33 +6,61 @@ import { ErrorState } from "@/components/ErrorState";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { getAgentDisplayName } from "@/lib/agentDisplay";
 import { getCurrentUserFromCookies, getDashboardSummaryFromCookies } from "@/lib/auth";
+import {
+  TIME_RANGE_OPTIONS,
+  getTimeRangeLabel,
+  getTimeRangeShortLabel,
+  normalizeTimeRange
+} from "@/lib/timeRanges";
+
+type SearchParams = {
+  time_range?: string | string[];
+};
 
 function formatNumber(value: number) {
   return new Intl.NumberFormat("en-US").format(value);
 }
 
-export default async function DashboardPage() {
+function getParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function DashboardPage({ searchParams }: { searchParams?: SearchParams }) {
   const currentUser = await getCurrentUserFromCookies();
   if (!currentUser) {
     redirect("/login");
   }
+  const timeRange = normalizeTimeRange(getParam(searchParams?.time_range));
+  const timeRangeLabel = getTimeRangeLabel(timeRange);
+  const timeRangeShortLabel = getTimeRangeShortLabel(timeRange);
 
   try {
-    const summary = await getDashboardSummaryFromCookies();
+    const summary = await getDashboardSummaryFromCookies(timeRange);
 
     return (
       <AppShell title="Dashboard" eyebrow="Operations Summary" currentUser={currentUser}>
         <section className="panel">
           <div className="panel-header">
             <div>
-              <h3>24h Operations</h3>
+              <h3>{timeRangeShortLabel} Operations</h3>
               <p>Current alert volume, agent coverage, open cases, and assigned workload.</p>
             </div>
+            <form className="inline-filter-form" method="get">
+              <label>
+                <span>Time Range</span>
+                <select name="time_range" defaultValue={timeRange}>
+                  {TIME_RANGE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </label>
+              <button type="submit">Apply</button>
+            </form>
           </div>
 
           <div className="dashboard-summary-grid">
             <div className="summary-card">
-              <span className="summary-label">Alerts 24h</span>
+              <span className="summary-label">Alerts {timeRangeShortLabel}</span>
               <strong className="summary-value">{formatNumber(summary.total_alerts_24h)}</strong>
             </div>
             <div className="summary-card">
@@ -62,15 +90,15 @@ export default async function DashboardPage() {
           <div className="panel-header">
             <div>
               <h3>Recent High Severity Alerts</h3>
-              <p>Newest high and critical alerts from the last 24 hours.</p>
+              <p>Newest high and critical alerts from {timeRangeLabel.toLowerCase()}.</p>
             </div>
-            <Link href="/alerts?severity=high&time_range=24h" className="text-link">
+            <Link href={`/alerts?severity=high&time_range=${encodeURIComponent(timeRange)}`} className="text-link">
               Open alerts
             </Link>
           </div>
 
           {summary.recent_high_alerts.length === 0 ? (
-            <p className="inline-empty">No high or critical alerts were found in the last 24 hours.</p>
+            <p className="inline-empty">No high or critical alerts were found in {timeRangeLabel.toLowerCase()}.</p>
           ) : (
             <div className="table-scroll">
               <table className="data-table">

@@ -219,8 +219,17 @@ class IndexerClient:
 
     def _time_range_to_gte(self, time_range: str) -> str:
         value = time_range.strip().lower()
-        if value.endswith(("m", "h", "d")):
-            return f"now-{value}"
+        mapping = {
+            "1h": "now-1h",
+            "24h": "now-24h",
+            "3d": "now-3d",
+            "3day": "now-3d",
+            "7d": "now-7d",
+            "1m": "now-30d",
+            "3m": "now-90d",
+        }
+        if value in mapping:
+            return mapping[value]
         return "now-24h"
 
 

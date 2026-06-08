@@ -16,6 +16,7 @@ async def get_dashboard_summary(
     session: AsyncSession,
     current_user: User,
     settings: Settings,
+    time_range: str = "24h",
 ) -> DashboardSummaryResponse:
     alert_client = MockDataService() if settings.mock_mode else IndexerClient(settings)
     agent_client = MockDataService() if settings.mock_mode else WazuhApiClient(settings)
@@ -23,7 +24,7 @@ async def get_dashboard_summary(
     total_alerts = await alert_client.search_alerts(
         page=1,
         page_size=1,
-        time_range="24h",
+        time_range=time_range,
         severity=None,
         agent_id=None,
         agent_name=None,
@@ -33,7 +34,7 @@ async def get_dashboard_summary(
     high_alerts = await alert_client.search_alerts(
         page=1,
         page_size=5,
-        time_range="24h",
+        time_range=time_range,
         severity="high",
         agent_id=None,
         agent_name=None,
@@ -43,7 +44,7 @@ async def get_dashboard_summary(
     critical_alerts = await alert_client.search_alerts(
         page=1,
         page_size=5,
-        time_range="24h",
+        time_range=time_range,
         severity="critical",
         agent_id=None,
         agent_name=None,

@@ -180,8 +180,11 @@ export async function getAuditLogsFromCookies(params: {
   });
 }
 
-export async function getDashboardSummaryFromCookies(): Promise<DashboardSummaryResponse> {
-  return authorizedJsonFetch<DashboardSummaryResponse>("/api/dashboard/summary", {
+export async function getDashboardSummaryFromCookies(timeRange = "24h"): Promise<DashboardSummaryResponse> {
+  const query = new URLSearchParams();
+  query.set("time_range", timeRange);
+
+  return authorizedJsonFetch<DashboardSummaryResponse>(`/api/dashboard/summary?${query.toString()}`, {
     method: "GET"
   });
 }

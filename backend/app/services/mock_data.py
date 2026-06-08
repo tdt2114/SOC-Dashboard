@@ -213,6 +213,10 @@ def _time_range_to_hours(value: str | None) -> int | None:
     mapping = {
         "1h": 1,
         "24h": 24,
+        "3d": 24 * 3,
+        "3day": 24 * 3,
         "7d": 24 * 7,
+        "1m": 24 * 30,
+        "3m": 24 * 90,
     }
-    return mapping.get(normalized)
+    return mapping.get(normalized, 24)

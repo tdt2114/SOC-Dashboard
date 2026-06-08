@@ -158,10 +158,17 @@ The tests verify:
 
 ## Backup and Results
 
+- Pilot handoff package: [docs/PILOT_HANDOFF.md](docs/PILOT_HANDOFF.md)
+- Feature matrix: [docs/FEATURE_MATRIX.md](docs/FEATURE_MATRIX.md)
+- Roadmap: [docs/ROADMAP.md](docs/ROADMAP.md)
+- Production deployment checklist: [docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md](docs/PRODUCTION_DEPLOYMENT_CHECKLIST.md)
+- Release and rollback checklist: [docs/RELEASE_ROLLBACK_CHECKLIST.md](docs/RELEASE_ROLLBACK_CHECKLIST.md)
+- Centralized log sink decision: [docs/LOG_SINK_DECISION.md](docs/LOG_SINK_DECISION.md)
 - PostgreSQL backup/restore runbook: [docs/POSTGRES_BACKUP_RESTORE.md](docs/POSTGRES_BACKUP_RESTORE.md)
 - Production restore approval procedure: [docs/PRODUCTION_RESTORE_APPROVAL.md](docs/PRODUCTION_RESTORE_APPROVAL.md)
 - Production secret rotation procedure: [docs/PRODUCTION_SECRET_ROTATION.md](docs/PRODUCTION_SECRET_ROTATION.md)
 - Production log retention policy: [docs/PRODUCTION_LOG_RETENTION.md](docs/PRODUCTION_LOG_RETENTION.md)
+- Production monitoring and log shipping runbook: [docs/PRODUCTION_MONITORING.md](docs/PRODUCTION_MONITORING.md)
 - Case retention and archival policy: [docs/CASE_RETENTION_POLICY.md](docs/CASE_RETENTION_POLICY.md)
 - Pilot verification results for report reuse: [docs/PILOT_TEST_RESULTS.md](docs/PILOT_TEST_RESULTS.md)
 
