@@ -256,3 +256,30 @@ export interface CaseListResponse {
   items: CaseItem[];
   total: number;
 }
+
+export interface PendingActionItem {
+  id: number;
+  token: string;
+  action_type: string;
+  command: string;
+  target_agent_id: string;
+  arguments: string[] | null;
+  reason: string | null;
+  rule_id: string | null;
+  alert_id: string | null;
+  case_id: number | null;
+  status: string;
+  requested_by: string;
+  decided_by_user_id: number | null;
+  decided_by_username: string | null;
+  decided_at: string | null;
+  execution_status: string | null;
+  execution_detail: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PendingActionListResponse {
+  items: PendingActionItem[];
+  total: number;
+}

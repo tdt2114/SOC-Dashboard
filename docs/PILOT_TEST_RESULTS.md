@@ -479,3 +479,53 @@ OK
 ```
 
 No runtime application code changed in this step.
+
+Dashboard and alert time-range retention fix:
+
+```text
+Supported ranges:
+1h, 24h, 3day, 7d, 1m, 3m
+
+Implementation notes:
+- Dashboard summary now accepts time_range and passes it to alert searches.
+- Indexer maps 1m to now-30d and 3m to now-90d because OpenSearch date math uses m for minutes.
+- Dashboard time-range control uses a client-side apply action to keep /dashboard?time_range=3m instead of resetting to 24h.
+- Alerts page uses the same shared time-range options.
+```
+
+Post-time-range-fix verification:
+
+```text
+npm run build
+Compiled successfully
+
+docker compose up -d --build
+Image soc-dashboard-soc-frontend Built
+Container soc-frontend Started
+
+GET /dashboard?time_range=3m
+dashboard status=200 path=/dashboard?time_range=3m hasLast3Months=True has24hOps=False
+
+GET /alerts?time_range=3m&page_size=10
+alerts status=200 path=/alerts?time_range=3m&page_size=10 hasLast3Months=True
+
+python scripts/smoke_pilot.py --username <superadmin-username> --password <superadmin-password>
+PASS: backend health ok (mock)
+PASS: login page renders
+PASS: stale cookie redirects to login
+PASS: frontend login succeeds
+PASS: /dashboard renders
+PASS: /alerts renders
+PASS: alert detail renders with back action
+PASS: /cases renders
+PASS: /users renders
+PASS: /audit-logs renders
+PASS: /settings renders
+PASS: /api/exports/alerts.csv exports CSV
+PASS: /api/exports/cases.csv exports CSV
+PASS: /api/exports/audit-logs.csv exports CSV
+
+python -m unittest discover -s tests -v
+Ran 15 tests in 5.571s
+OK (skipped=1)
+```

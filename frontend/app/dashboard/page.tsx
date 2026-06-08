@@ -2,16 +2,12 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { AppShell } from "@/components/AppShell";
+import { DashboardTimeRangeFilter } from "@/components/DashboardTimeRangeFilter";
 import { ErrorState } from "@/components/ErrorState";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { getAgentDisplayName } from "@/lib/agentDisplay";
 import { getCurrentUserFromCookies, getDashboardSummaryFromCookies } from "@/lib/auth";
-import {
-  TIME_RANGE_OPTIONS,
-  getTimeRangeLabel,
-  getTimeRangeShortLabel,
-  normalizeTimeRange
-} from "@/lib/timeRanges";
+import { getTimeRangeLabel, getTimeRangeShortLabel, normalizeTimeRange } from "@/lib/timeRanges";
 
 type SearchParams = {
   time_range?: string | string[];
@@ -25,12 +21,13 @@ function getParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-export default async function DashboardPage({ searchParams }: { searchParams?: SearchParams }) {
+export default async function DashboardPage({ searchParams }: { searchParams?: Promise<SearchParams> }) {
   const currentUser = await getCurrentUserFromCookies();
   if (!currentUser) {
     redirect("/login");
   }
-  const timeRange = normalizeTimeRange(getParam(searchParams?.time_range));
+  const resolvedSearchParams = await searchParams;
+  const timeRange = normalizeTimeRange(getParam(resolvedSearchParams?.time_range));
   const timeRangeLabel = getTimeRangeLabel(timeRange);
   const timeRangeShortLabel = getTimeRangeShortLabel(timeRange);
 
@@ -45,17 +42,7 @@ export default async function DashboardPage({ searchParams }: { searchParams?: S
               <h3>{timeRangeShortLabel} Operations</h3>
               <p>Current alert volume, agent coverage, open cases, and assigned workload.</p>
             </div>
-            <form className="inline-filter-form" method="get">
-              <label>
-                <span>Time Range</span>
-                <select name="time_range" defaultValue={timeRange}>
-                  {TIME_RANGE_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </label>
-              <button type="submit">Apply</button>
-            </form>
+            <DashboardTimeRangeFilter value={timeRange} />
           </div>
 
           <div className="dashboard-summary-grid">

@@ -83,13 +83,22 @@ class PilotFrontendRegressionTests(unittest.TestCase):
         self.assertNotIn("Name this filter set", body)
         self.assertIn("10 per page", body)
         self.assertIn("15 per page", body)
+        self.assertIn("Last 1h", body)
+        self.assertIn("Last 3 days", body)
+        self.assertIn("Last 1 month", body)
+        self.assertIn("Last 3 months", body)
         self.assertIn("Showing", body)
         self.assertIn("Next", body)
 
-        page_two = self.page("/alerts?page=2&page_size=10")
+        page_two = self.page("/alerts?page=2&page_size=1")
         self.assertEqual(page_two.status, 200)
-        self.assertIn("Showing", page_two.body)
-        self.assertIn("Previous", page_two.body)
+        self.assertIn("Alert List", page_two.body)
+
+    def test_dashboard_time_range_filter_keeps_selected_range(self) -> None:
+        response = self.page("/dashboard?time_range=3m")
+        self.assertEqual(response.status, 200)
+        self.assertIn("Last 3 months", response.body)
+        self.assertNotIn("24h Operations", response.body)
 
     def test_alert_detail_keeps_back_action_and_raw_json(self) -> None:
         alerts = self.page("/alerts?page_size=10")

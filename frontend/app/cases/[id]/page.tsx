@@ -6,7 +6,8 @@ import { AppShell } from "@/components/AppShell";
 import { CaseDetailActions } from "@/components/CaseDetailActions";
 import { ErrorState } from "@/components/ErrorState";
 import { KeyValueGrid } from "@/components/KeyValueGrid";
-import { getCaseFromCookies, getCurrentUserFromCookies } from "@/lib/auth";
+import { PendingActionsPanel } from "@/components/PendingActionsPanel";
+import { getCaseFromCookies, getCurrentUserFromCookies, getPendingActionsForCaseFromCookies } from "@/lib/auth";
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -22,6 +23,10 @@ function formatDate(value: string) {
 
 function canUseCases(currentUser: NonNullable<Awaited<ReturnType<typeof getCurrentUserFromCookies>>>) {
   return currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
+}
+
+function canApproveActions(currentUser: NonNullable<Awaited<ReturnType<typeof getCurrentUserFromCookies>>>) {
+  return currentUser.is_superuser || currentUser.roles.some((role) => role === "admin");
 }
 
 export default async function CaseDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -46,6 +51,9 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
 
   try {
     const item = await getCaseFromCookies(Number(id));
+    const pendingActions = await getPendingActionsForCaseFromCookies(item.id)
+      .then((response) => response.items)
+      .catch(() => []);
 
     return (
       <AppShell title="Case Detail" eyebrow="Analyst Workflow" currentUser={currentUser}>
@@ -73,6 +81,16 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
           />
 
           <CaseDetailActions item={item} />
+        </section>
+
+        <section className="panel">
+          <div className="panel-header">
+            <div>
+              <h3>Response Actions (SOAR)</h3>
+              <p>Active-response requests from SOAR that need human approval before execution.</p>
+            </div>
+          </div>
+          <PendingActionsPanel actions={pendingActions} canApprove={canApproveActions(currentUser)} />
         </section>
 
         <section className="panel">

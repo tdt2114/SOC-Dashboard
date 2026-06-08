@@ -71,19 +71,20 @@ function PaginationLink({
 export default async function AlertsPage({
   searchParams
 }: {
-  searchParams?: SearchParams;
+  searchParams?: Promise<SearchParams>;
 }) {
   const currentUser = await getCurrentUserFromCookies();
   if (!currentUser) {
     redirect("/login");
   }
-  const page = normalizePage(searchParams?.page);
-  const pageSize = normalizePageSize(searchParams?.page_size);
-  const timeRange = normalizeTimeRange(getParam(searchParams?.time_range));
-  const severity = getParam(searchParams?.severity);
-  const agentName = getParam(searchParams?.agent_name);
-  const ruleId = getParam(searchParams?.rule_id);
-  const query = getParam(searchParams?.q);
+  const resolvedSearchParams = await searchParams;
+  const page = normalizePage(resolvedSearchParams?.page);
+  const pageSize = normalizePageSize(resolvedSearchParams?.page_size);
+  const timeRange = normalizeTimeRange(getParam(resolvedSearchParams?.time_range));
+  const severity = getParam(resolvedSearchParams?.severity);
+  const agentName = getParam(resolvedSearchParams?.agent_name);
+  const ruleId = getParam(resolvedSearchParams?.rule_id);
+  const query = getParam(resolvedSearchParams?.q);
   const currentFilters = {
     q: query || "",
     severity: severity || "",

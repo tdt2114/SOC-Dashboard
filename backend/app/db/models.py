@@ -247,6 +247,32 @@ class CaseComment(TimestampMixin, Base):
     author_user: Mapped[User] = relationship(foreign_keys=[author_user_id])
 
 
+class PendingAction(TimestampMixin, Base):
+    """A response action requested by SOAR that waits for human (admin) approval."""
+
+    __tablename__ = "pending_actions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False, index=True)
+    action_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    command: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_agent_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    arguments: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rule_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    alert_id: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    case_id: Mapped[int | None] = mapped_column(ForeignKey("cases.id"), nullable=True, index=True)
+    status: Mapped[str] = mapped_column(String(20), default="pending", nullable=False, index=True)
+    requested_by: Mapped[str] = mapped_column(String(100), nullable=False)
+    decided_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    execution_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    execution_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    decided_by_user: Mapped[User | None] = relationship(foreign_keys=[decided_by_user_id])
+    case: Mapped[Case | None] = relationship(foreign_keys=[case_id])
+
+
 __all__ = [
     "Base",
     "AlertAssignment",
@@ -258,6 +284,7 @@ __all__ = [
     "CaseComment",
     "Department",
     "Notification",
+    "PendingAction",
     "Role",
     "RefreshToken",
     "SavedSearch",

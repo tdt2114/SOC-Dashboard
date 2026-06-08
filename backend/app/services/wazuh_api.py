@@ -44,6 +44,29 @@ class WazuhApiClient:
                 return item
         return None
 
+    async def run_active_response(
+        self,
+        *,
+        agent_id: str,
+        command: str,
+        arguments: list[str] | None = None,
+    ) -> dict[str, Any]:
+        """Trigger a Wazuh active-response command on a specific agent.
+
+        Maps to PUT /active-response?agents_list=<id> with a command body. The
+        command must be defined on the Wazuh manager (and enabled on the agent
+        side) for this to actually execute a response.
+        """
+        token = await self._authenticate()
+        body: dict[str, Any] = {"command": command, "arguments": arguments or []}
+        return await self._request(
+            "PUT",
+            "/active-response",
+            token=token,
+            params={"agents_list": agent_id},
+            json=body,
+        )
+
     async def _authenticate(self) -> str:
         try:
             async with httpx.AsyncClient(

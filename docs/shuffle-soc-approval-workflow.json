@@ -1,0 +1,50 @@
+{
+  "name": "SOC - SOAR Approval Intake",
+  "description": "Reference Shuffle workflow: receive a Wazuh alert and create a pending response action in the SOC Dashboard for human approval. Import and adapt to your Shuffle version; node IDs and app versions may differ.",
+  "_note": "This is a reference template, not a guaranteed 1:1 Shuffle export. Set the workflow variables, then map your alert fields in the HTTP body.",
+  "workflow_variables": [
+    { "name": "DASHBOARD_URL", "value": "http://soc-backend:8000", "description": "Dashboard backend reachable from Shuffle" },
+    { "name": "SOAR_WEBHOOK_TOKEN", "value": "change-me-soar-token", "description": "Must match Repo B SOAR_WEBHOOK_TOKEN" },
+    { "name": "ACTION_TYPE", "value": "isolate-host", "description": "isolate-host | kill-process | block-ip-iptables" }
+  ],
+  "triggers": [
+    {
+      "id": "trigger_webhook",
+      "type": "WEBHOOK",
+      "name": "Wazuh alert in",
+      "description": "Wazuh custom-shuffle integration POSTs the alert JSON here."
+    }
+  ],
+  "actions": [
+    {
+      "id": "action_create_pending",
+      "app_name": "HTTP",
+      "name": "Create pending action",
+      "method": "POST",
+      "url": "$DASHBOARD_URL/api/actions",
+      "headers": {
+        "Content-Type": "application/json",
+        "X-SOAR-Token": "$SOAR_WEBHOOK_TOKEN"
+      },
+      "body": {
+        "action_type": "$ACTION_TYPE",
+        "target_agent_id": "$exec.agent.id",
+        "arguments": ["$exec.data.srcip"],
+        "reason": "$exec.rule.description",
+        "rule_id": "$exec.rule.id",
+        "alert_id": "$exec.id"
+      },
+      "conditions": [
+        {
+          "field": "$exec.rule.level",
+          "operator": "larger than",
+          "value": "9",
+          "_comment": "Only escalate high-severity rules; tighten to specific rule.id values (e.g. 100010) in production."
+        }
+      ]
+    }
+  ],
+  "branches": [
+    { "source_id": "trigger_webhook", "destination_id": "action_create_pending" }
+  ]
+}

@@ -62,6 +62,7 @@ class Settings:
     wazuh_indexer_username: str
     wazuh_indexer_password: str
     wazuh_alert_index_pattern: str
+    soar_webhook_token: str
 
 
 @lru_cache(maxsize=1)
@@ -126,4 +127,5 @@ def get_settings() -> Settings:
         wazuh_indexer_username=os.getenv("WAZUH_INDEXER_USERNAME", "admin"),
         wazuh_indexer_password=os.getenv("WAZUH_INDEXER_PASSWORD", ""),
         wazuh_alert_index_pattern=os.getenv("WAZUH_ALERT_INDEX_PATTERN", "wazuh-alerts-*"),
+        soar_webhook_token=os.getenv("SOAR_WEBHOOK_TOKEN", ""),
     )

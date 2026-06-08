@@ -90,6 +90,14 @@ class PilotApiRegressionTests(unittest.TestCase):
         self.assertLessEqual(len(payload["items"]), 10)
         self.assertGreaterEqual(payload["total"], len(payload["items"]))
 
+        three_month_alerts = self.api("GET", "/api/alerts?page=1&page_size=10&time_range=3m")
+        self.assertEqual(three_month_alerts.status, 200)
+        self.assertGreaterEqual(three_month_alerts.json()["total"], payload["total"])
+
+        dashboard_three_months = self.api("GET", "/api/dashboard/summary?time_range=3m")
+        self.assertEqual(dashboard_three_months.status, 200)
+        self.assertGreaterEqual(dashboard_three_months.json()["total_alerts_24h"], payload["total"])
+
         high_alerts = self.api("GET", "/api/alerts?page=1&page_size=5&severity=high")
         self.assertEqual(high_alerts.status, 200)
         for item in high_alerts.json()["items"]:
@@ -332,6 +340,109 @@ class PilotApiRegressionTests(unittest.TestCase):
                 self.assertEqual(closed.status, 200)
                 self.assertEqual(closed.json()["status"], "closed")
                 self.assertEqual(closed.json()["severity"], "low")
+
+    def test_soar_action_request_approve_and_reject(self) -> None:
+        soar_token = os.getenv("SOAR_WEBHOOK_TOKEN") or os.getenv("PILOT_TEST_SOAR_TOKEN")
+        if not soar_token:
+            self.skipTest("SOAR_WEBHOOK_TOKEN not set; SOAR intake endpoint disabled")
+
+        backend = self.backend_url
+        soar_opener, _ = make_opener()
+
+        def soar_create(payload: dict):
+            return request(
+                soar_opener,
+                "POST",
+                f"{backend}/api/actions",
+                payload=payload,
+                extra_headers={"X-SOAR-Token": soar_token},
+            )
+
+        invalid_token = request(
+            soar_opener,
+            "POST",
+            f"{backend}/api/actions",
+            payload={"action_type": "isolate-host", "target_agent_id": "001"},
+            extra_headers={"X-SOAR-Token": "wrong-token"},
+        )
+        self.assertEqual(invalid_token.status, 401)
+
+        unsupported = soar_create({"action_type": "format-disk", "target_agent_id": "001"})
+        self.assertEqual(unsupported.status, 400)
+
+        created = soar_create(
+            {
+                "action_type": "isolate-host",
+                "target_agent_id": "001",
+                "reason": "pilot regression isolate",
+                "rule_id": "100010",
+            }
+        )
+        self.assertEqual(created.status, 201, created.body)
+        created_payload = created.json()
+        token = created_payload["token"]
+        self.assertEqual(created_payload["status"], "pending")
+        self.assertEqual(created_payload["command"], "isolate-host")
+        self.assertTrue(created_payload["approval_path"].endswith("/approve"))
+
+        viewer_token, _ = self.login_as_role("viewer")
+        viewer_opener, _ = make_opener()
+        viewer_list = request(viewer_opener, "GET", f"{backend}/api/actions", bearer_token=viewer_token)
+        self.assertEqual(viewer_list.status, 403)
+
+        analyst_token, _ = self.login_as_role("analyst")
+        analyst_opener, _ = make_opener()
+        analyst_list = request(
+            analyst_opener,
+            "GET",
+            f"{backend}/api/actions?status=pending",
+            bearer_token=analyst_token,
+        )
+        self.assertEqual(analyst_list.status, 200)
+        self.assertTrue(any(item["token"] == token for item in analyst_list.json()["items"]))
+
+        analyst_approve = request(
+            analyst_opener,
+            "POST",
+            f"{backend}/api/actions/{token}/approve",
+            bearer_token=analyst_token,
+        )
+        self.assertEqual(analyst_approve.status, 403)
+
+        admin_token, _ = self.login_as_role("admin")
+        admin_opener, _ = make_opener()
+        approved = request(
+            admin_opener,
+            "POST",
+            f"{backend}/api/actions/{token}/approve",
+            bearer_token=admin_token,
+        )
+        self.assertEqual(approved.status, 200, approved.body)
+        self.assertEqual(approved.json()["status"], "approved")
+        self.assertIn(approved.json()["execution_status"], ["success", "failed", "skipped"])
+
+        reapprove = request(
+            admin_opener,
+            "POST",
+            f"{backend}/api/actions/{token}/approve",
+            bearer_token=admin_token,
+        )
+        self.assertEqual(reapprove.status, 409)
+
+        second = soar_create(
+            {"action_type": "kill-process", "target_agent_id": "001", "reason": "pilot regression kill"}
+        )
+        self.assertEqual(second.status, 201)
+        second_token = second.json()["token"]
+        rejected = request(
+            admin_opener,
+            "POST",
+            f"{backend}/api/actions/{second_token}/reject",
+            payload={"reason": "false positive"},
+            bearer_token=admin_token,
+        )
+        self.assertEqual(rejected.status, 200)
+        self.assertEqual(rejected.json()["status"], "rejected")
 
 
 if __name__ == "__main__":

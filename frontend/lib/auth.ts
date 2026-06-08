@@ -10,6 +10,8 @@ import {
   CaseListResponse,
   DashboardSummaryResponse,
   NotificationListResponse,
+  PendingActionItem,
+  PendingActionListResponse,
   SavedSearchListResponse,
   SystemSettingsResponse,
   UserAdminListResponse
@@ -333,6 +335,28 @@ export async function addCaseCommentAgainstBackend(caseId: number, body: string)
   return authorizedJsonFetch<CaseDetail>(`/api/cases/${caseId}/comments`, {
     method: "POST",
     body: JSON.stringify({ body })
+  });
+}
+
+export async function getPendingActionsForCaseFromCookies(caseId: number): Promise<PendingActionListResponse> {
+  return authorizedJsonFetch<PendingActionListResponse>(`/api/actions?case_id=${caseId}`, {
+    method: "GET"
+  });
+}
+
+export async function approvePendingActionAgainstBackend(token: string): Promise<PendingActionItem> {
+  return authorizedJsonFetch<PendingActionItem>(`/api/actions/${encodeURIComponent(token)}/approve`, {
+    method: "POST"
+  });
+}
+
+export async function rejectPendingActionAgainstBackend(
+  token: string,
+  reason: string | null
+): Promise<PendingActionItem> {
+  return authorizedJsonFetch<PendingActionItem>(`/api/actions/${encodeURIComponent(token)}/reject`, {
+    method: "POST",
+    body: JSON.stringify({ reason })
   });
 }
 

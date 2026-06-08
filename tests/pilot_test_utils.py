@@ -103,6 +103,7 @@ def request(
     *,
     payload: dict[str, Any] | None = None,
     bearer_token: str | None = None,
+    extra_headers: dict[str, str] | None = None,
 ) -> PilotResponse:
     data = None
     headers: dict[str, str] = {}
@@ -111,6 +112,8 @@ def request(
         headers["Content-Type"] = "application/json"
     if bearer_token:
         headers["Authorization"] = f"Bearer {bearer_token}"
+    if extra_headers:
+        headers.update(extra_headers)
 
     req = urllib.request.Request(url=url, data=data, headers=headers, method=method)
     try:
