@@ -159,6 +159,8 @@ The tests verify:
 ## Backup and Results
 
 - PostgreSQL backup/restore runbook: [docs/POSTGRES_BACKUP_RESTORE.md](docs/POSTGRES_BACKUP_RESTORE.md)
+- Production restore approval procedure: [docs/PRODUCTION_RESTORE_APPROVAL.md](docs/PRODUCTION_RESTORE_APPROVAL.md)
+- Case retention and archival policy: [docs/CASE_RETENTION_POLICY.md](docs/CASE_RETENTION_POLICY.md)
 - Pilot verification results for report reuse: [docs/PILOT_TEST_RESULTS.md](docs/PILOT_TEST_RESULTS.md)
 
 ## CI

@@ -60,6 +60,8 @@ Recommended retention:
 
 Restore overwrites data in the target database. Do this only after confirming the current database can be replaced.
 
+For production or production-like pilot environments, complete [PRODUCTION_RESTORE_APPROVAL.md](PRODUCTION_RESTORE_APPROVAL.md) before running the restore command.
+
 Run from `soc-dashboard`:
 
 ```powershell

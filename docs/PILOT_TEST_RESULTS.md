@@ -227,3 +227,64 @@ Current remaining operational work:
 
 - Run the GitHub Actions workflow on the remote branch/PR and capture the result.
 - Re-run live mode verification with Repo A before handoff if the stack is switched from mock mode back to live mode.
+
+Case retention policy added:
+
+```text
+docs/CASE_RETENTION_POLICY.md
+scripts/report_case_retention.ps1
+```
+
+The script is read-only and reports case counts plus closed regression/pilot cases past the configured retention windows. It does not delete or archive data.
+
+Local retention report verification:
+
+```text
+.\scripts\report_case_retention.ps1
+Case retention report
+Database: soc_dashboard
+Regression retention days: 30
+Pilot retention days: 90
+
+Cases by status:
+closed | 17
+open   | 1
+
+Closed regression cases past retention: 0
+Closed pilot cases past retention: 0
+Report only. No data was changed.
+```
+
+Post-retention-policy verification:
+
+```text
+python scripts/smoke_pilot.py --username <superadmin-username> --password <superadmin-password>
+PASS: backend health ok (mock)
+PASS: login page renders
+PASS: stale cookie redirects to login
+PASS: frontend login succeeds
+PASS: /dashboard renders
+PASS: /alerts renders
+PASS: alert detail renders with back action
+PASS: /cases renders
+PASS: /users renders
+PASS: /audit-logs renders
+PASS: /settings renders
+PASS: /api/exports/alerts.csv exports CSV
+PASS: /api/exports/cases.csv exports CSV
+PASS: /api/exports/audit-logs.csv exports CSV
+
+python -m unittest discover -s tests -v
+Ran 13 tests in 2.329s
+OK
+```
+
+Production restore approval procedure added:
+
+```text
+docs/PRODUCTION_RESTORE_APPROVAL.md
+docs/POSTGRES_BACKUP_RESTORE.md links the approval procedure before destructive restore.
+docs/PILOT_READINESS.md links the approval procedure for production-like restore operations.
+```
+
+No runtime code changed in this step.
