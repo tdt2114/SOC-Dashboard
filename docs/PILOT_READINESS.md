@@ -71,6 +71,8 @@ Verify the backup can restore into a disposable PostgreSQL container:
 
 For production-like restore operations, complete [PRODUCTION_RESTORE_APPROVAL.md](PRODUCTION_RESTORE_APPROVAL.md) before running `restore_postgres.ps1 -ConfirmRestore`.
 
+For production-like credential changes, follow [PRODUCTION_SECRET_ROTATION.md](PRODUCTION_SECRET_ROTATION.md) and record the verification result.
+
 ## Retention Requirement
 
 Before a pilot handoff or cleanup window, run the read-only case retention report:
@@ -80,6 +82,8 @@ Before a pilot handoff or cleanup window, run the read-only case retention repor
 ```
 
 See [CASE_RETENTION_POLICY.md](CASE_RETENTION_POLICY.md) for regression case, pilot case, and future production retention rules.
+
+For production-like log, backup, and audit evidence retention, follow [PRODUCTION_LOG_RETENTION.md](PRODUCTION_LOG_RETENTION.md).
 
 ## Manual Smoke Test
 
@@ -170,8 +174,6 @@ The workflow runs in mock mode using `.env.ci`, starts Docker Compose from a cle
 - No external notification channel.
 - No rate limiting.
 - No Redis/session store split.
-- No final production log retention policy.
-- No formal secret rotation procedure.
 - Frontend dependency advisories were reviewed on 2026-06-08; `npm audit` currently reports 0 vulnerabilities.
 - Frontend now uses a system font stack and does not depend on Google Fonts during Docker build.
 
@@ -191,4 +193,4 @@ The pilot can be considered successful when:
 
 1. Run the new GitHub Actions workflow on the remote branch/PR and capture the result.
 2. Re-run live mode verification with Repo A before pilot handoff if `.env` is switched back from mock mode.
-3. Add production secret rotation procedure.
+3. Add centralized production monitoring and log shipping.

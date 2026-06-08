@@ -223,10 +223,36 @@ Ran 13 tests in 2.595s
 OK
 ```
 
+Remote GitHub Actions verification:
+
+```text
+Workflow: Pilot Regression #1
+Trigger: push
+Branch: main
+Commit: 3e41d37
+Status: Success
+Total duration: 1m 15s
+Job: pilot-regression
+Job duration: 1m 10s
+```
+
+The run completed successfully on GitHub Actions. The run also reported a warning that some GitHub Actions are using the deprecated Node.js 20 action runtime. This is not a test failure, but the workflow actions should be reviewed in the next operational hardening pass.
+
+GitHub Actions runtime warning follow-up:
+
+```text
+Updated .github/workflows/pilot-regression.yml:
+actions/checkout@v4 -> actions/checkout@v6
+actions/setup-python@v5 -> actions/setup-python@v6
+actions/setup-node@v4 -> actions/setup-node@v6
+```
+
+These versions target the newer Node.js action runtime. Re-run GitHub Actions after pushing this change to confirm the warning is cleared.
+
 Current remaining operational work:
 
-- Run the GitHub Actions workflow on the remote branch/PR and capture the result.
 - Re-run live mode verification with Repo A before handoff if the stack is switched from mock mode back to live mode.
+- Add centralized production monitoring and log shipping.
 
 Case retention policy added:
 
@@ -288,3 +314,49 @@ docs/PILOT_READINESS.md links the approval procedure for production-like restore
 ```
 
 No runtime code changed in this step.
+
+Production secret rotation procedure added on `main`:
+
+```text
+docs/PRODUCTION_SECRET_ROTATION.md
+README.md and docs/PILOT_READINESS.md link the procedure for production-like credential changes.
+```
+
+Production log retention policy added:
+
+```text
+docs/PRODUCTION_LOG_RETENTION.md
+README.md and docs/PILOT_READINESS.md link the policy for log, audit evidence, backup, and cleanup retention.
+```
+
+Post-policy and workflow-runtime local verification:
+
+```text
+git diff --check
+OK
+
+npm audit --audit-level=moderate
+found 0 vulnerabilities
+
+python scripts/smoke_pilot.py --username <superadmin-username> --password <superadmin-password>
+PASS: backend health ok (mock)
+PASS: login page renders
+PASS: stale cookie redirects to login
+PASS: frontend login succeeds
+PASS: /dashboard renders
+PASS: /alerts renders
+PASS: alert detail renders with back action
+PASS: /cases renders
+PASS: /users renders
+PASS: /audit-logs renders
+PASS: /settings renders
+PASS: /api/exports/alerts.csv exports CSV
+PASS: /api/exports/cases.csv exports CSV
+PASS: /api/exports/audit-logs.csv exports CSV
+
+python -m unittest discover -s tests -v
+Ran 13 tests in 2.106s
+OK
+```
+
+No runtime application code changed in this step.
