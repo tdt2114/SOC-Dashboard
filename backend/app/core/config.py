@@ -63,6 +63,10 @@ class Settings:
     wazuh_indexer_password: str
     wazuh_alert_index_pattern: str
     soar_webhook_token: str
+    ai_enabled: bool
+    gemini_api_key: str
+    ai_model: str
+    ai_timeout_seconds: float
 
 
 @lru_cache(maxsize=1)
@@ -128,4 +132,8 @@ def get_settings() -> Settings:
         wazuh_indexer_password=os.getenv("WAZUH_INDEXER_PASSWORD", ""),
         wazuh_alert_index_pattern=os.getenv("WAZUH_ALERT_INDEX_PATTERN", "wazuh-alerts-*"),
         soar_webhook_token=os.getenv("SOAR_WEBHOOK_TOKEN", ""),
+        ai_enabled=_as_bool(os.getenv("AI_ENABLED"), default=False),
+        gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
+        ai_model=os.getenv("AI_MODEL", "gemini-1.5-flash"),
+        ai_timeout_seconds=float(os.getenv("AI_TIMEOUT_SECONDS", "20")),
     )

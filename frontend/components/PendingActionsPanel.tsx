@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { PendingActionItem } from "@/lib/types";
+import { AiAnalysis, PendingActionItem } from "@/lib/types";
 
 function formatDate(value: string | null) {
   if (!value) {
@@ -31,6 +31,25 @@ export function PendingActionsPanel({
   const [busyToken, setBusyToken] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [aiByToken, setAiByToken] = useState<Record<string, AiAnalysis>>({});
+  const [aiBusy, setAiBusy] = useState<string | null>(null);
+
+  async function aiAssess(token: string) {
+    setError(null);
+    setAiBusy(token);
+    try {
+      const response = await fetch(`/api/actions/${encodeURIComponent(token)}/ai-analyze`, { method: "POST" });
+      const payload = (await response.json()) as AiAnalysis & { detail?: string };
+      if (!response.ok) {
+        throw new Error(payload.detail || "Unable to run AI analysis");
+      }
+      setAiByToken((prev) => ({ ...prev, [token]: payload }));
+    } catch (aiError) {
+      setError(aiError instanceof Error ? aiError.message : "Unable to run AI analysis");
+    } finally {
+      setAiBusy(null);
+    }
+  }
 
   async function decide(token: string, decision: "approve" | "reject") {
     setError(null);
@@ -86,6 +105,33 @@ export function PendingActionsPanel({
               </p>
             ) : null}
             {action.execution_detail ? <p className="muted">{action.execution_detail}</p> : null}
+            {isPending ? (
+              <div className="stack">
+                <div className="alert-detail-actions">
+                  <button
+                    type="button"
+                    className="link-button"
+                    disabled={aiBusy === action.token}
+                    onClick={() => aiAssess(action.token)}
+                  >
+                    {aiBusy === action.token
+                      ? "AI assessing..."
+                      : aiByToken[action.token]
+                        ? "Re-assess (AI)"
+                        : "AI assess"}
+                  </button>
+                </div>
+                {aiByToken[action.token] ? (
+                  <p className="muted">
+                    🤖 AI: <strong>{aiByToken[action.token].recommended_action ?? "n/a"}</strong>
+                    {" · "}
+                    {aiByToken[action.token].should_block ? "block" : "no block"}
+                    {" · confidence "}
+                    {aiByToken[action.token].confidence ?? "?"}% — {aiByToken[action.token].summary}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             {isPending && canApprove ? (
               <div className="alert-detail-actions">
                 <button type="button" disabled={isBusy} onClick={() => decide(action.token, "approve")}>

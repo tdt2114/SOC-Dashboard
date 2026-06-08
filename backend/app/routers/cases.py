@@ -5,6 +5,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db.session import get_db_session
+from app.schemas.ai import AiAnalysisResponse
 from app.schemas.cases import (
     CaseAlertCreateRequest,
     CaseCommentCreateRequest,
@@ -13,6 +14,7 @@ from app.schemas.cases import (
     CaseListResponse,
     CaseUpdateRequest,
 )
+from app.services.ai_analyst import get_cached_case_analysis, summarize_case
 from app.services.auth import WORKFLOW_ROLES, get_current_user_model_from_token, require_user_roles
 from app.services.cases import (
     add_case_alert,
@@ -109,3 +111,24 @@ async def add_case_comment_route(
 ) -> CaseDetailResponse:
     current_user = await _workflow_user_from_token(credentials, session)
     return await add_case_comment(session, current_user, case_id, payload)
+
+
+@router.post("/{case_id}/ai-summary", response_model=AiAnalysisResponse)
+async def ai_summarize_case_route(
+    case_id: int,
+    force: bool = False,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    session: AsyncSession = Depends(get_db_session),
+) -> AiAnalysisResponse:
+    current_user = await _workflow_user_from_token(credentials, session)
+    return await summarize_case(session, current_user, case_id, force=force)
+
+
+@router.get("/{case_id}/ai-summary", response_model=AiAnalysisResponse)
+async def ai_get_case_summary_route(
+    case_id: int,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    session: AsyncSession = Depends(get_db_session),
+) -> AiAnalysisResponse:
+    await _workflow_user_from_token(credentials, session)
+    return await get_cached_case_analysis(session, case_id)

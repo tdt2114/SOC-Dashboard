@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import get_settings
 from app.db.session import check_database
-from app.routers import actions, agents, alerts, audit_logs, auth, cases, dashboard, exports, notifications, saved_searches, settings as settings_router, users
+from app.routers import actions, agents, ai, alerts, audit_logs, auth, cases, dashboard, exports, notifications, saved_searches, settings as settings_router, users
 
 settings = get_settings()
 
@@ -24,6 +24,7 @@ app.add_middleware(
 )
 
 app.include_router(alerts.router)
+app.include_router(ai.router)
 app.include_router(agents.router)
 app.include_router(auth.router)
 app.include_router(users.router)

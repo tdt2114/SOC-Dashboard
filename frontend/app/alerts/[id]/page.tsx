@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { AiAnalysisPanel } from "@/components/AiAnalysisPanel";
 import { AlertCasePanel } from "@/components/AlertCasePanel";
 import { AlertBookmarkButton } from "@/components/AlertBookmarkButton";
 import { AlertWorkflowPanel } from "@/components/AlertWorkflowPanel";
@@ -10,6 +11,7 @@ import { KeyValueGrid } from "@/components/KeyValueGrid";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { getAgentDisplayName } from "@/lib/agentDisplay";
 import {
+  getAlertAiAnalysisFromCookies,
   getAlertBookmarkFromCookies,
   getAlertWorkflowFromCookies,
   getCasesFromCookies,
@@ -44,6 +46,7 @@ export default async function AlertDetailPage({
       currentUser.is_superuser || currentUser.roles.some((role) => role === "admin" || role === "analyst");
     const bookmark = canBookmark ? await getAlertBookmarkFromCookies(id) : null;
     const cases = canBookmark ? await getCasesFromCookies() : null;
+    const aiAnalysis = canBookmark ? await getAlertAiAnalysisFromCookies(id) : null;
     const moreAlertsFromAgent = (relatedAlerts?.items || []).filter((item) => item.id !== alert.id);
     const agentDisplayName = getAgentDisplayName(alert.agent);
 
@@ -172,6 +175,15 @@ export default async function AlertDetailPage({
 
           <AlertWorkflowPanel alertId={id} currentUser={currentUser} initialWorkflow={workflow} />
           {cases ? <AlertCasePanel alertId={id} cases={cases} /> : null}
+
+          {canBookmark ? (
+            <section className="subpanel">
+              <div className="panel-header">
+                <h3>AI Analysis</h3>
+              </div>
+              <AiAnalysisPanel alertId={id} initial={aiAnalysis} canRun={canBookmark} />
+            </section>
+          ) : null}
 
           <div className="code-panel">
             <div className="panel-header">

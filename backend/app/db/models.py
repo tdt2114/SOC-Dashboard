@@ -273,8 +273,34 @@ class PendingAction(TimestampMixin, Base):
     case: Mapped[Case | None] = relationship(foreign_keys=[case_id])
 
 
+class AiAnalysis(TimestampMixin, Base):
+    """Cached AI triage for an alert/case/pending action (advisory only)."""
+
+    __tablename__ = "ai_analyses"
+    __table_args__ = (
+        UniqueConstraint("entity_type", "entity_ref", name="uq_ai_analyses_entity_type_entity_ref"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    entity_type: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
+    entity_ref: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(20), nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    attacker_intent: Mapped[str | None] = mapped_column(Text, nullable=True)
+    mitre: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    recommended_action: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    should_block: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    confidence: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    raw: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_by_user_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), nullable=True)
+
+    created_by_user: Mapped[User | None] = relationship(foreign_keys=[created_by_user_id])
+
+
 __all__ = [
     "Base",
+    "AiAnalysis",
     "AlertAssignment",
     "AlertBookmark",
     "AlertNote",

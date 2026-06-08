@@ -3,11 +3,17 @@ import { redirect } from "next/navigation";
 
 import { AccessDeniedState } from "@/components/AccessDeniedState";
 import { AppShell } from "@/components/AppShell";
+import { CaseAiSummaryPanel } from "@/components/CaseAiSummaryPanel";
 import { CaseDetailActions } from "@/components/CaseDetailActions";
 import { ErrorState } from "@/components/ErrorState";
 import { KeyValueGrid } from "@/components/KeyValueGrid";
 import { PendingActionsPanel } from "@/components/PendingActionsPanel";
-import { getCaseFromCookies, getCurrentUserFromCookies, getPendingActionsForCaseFromCookies } from "@/lib/auth";
+import {
+  getCaseAiSummaryFromCookies,
+  getCaseFromCookies,
+  getCurrentUserFromCookies,
+  getPendingActionsForCaseFromCookies
+} from "@/lib/auth";
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -54,6 +60,7 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
     const pendingActions = await getPendingActionsForCaseFromCookies(item.id)
       .then((response) => response.items)
       .catch(() => []);
+    const aiSummary = await getCaseAiSummaryFromCookies(item.id);
 
     return (
       <AppShell title="Case Detail" eyebrow="Analyst Workflow" currentUser={currentUser}>
@@ -91,6 +98,16 @@ export default async function CaseDetailPage({ params }: { params: Promise<{ id:
             </div>
           </div>
           <PendingActionsPanel actions={pendingActions} canApprove={canApproveActions(currentUser)} />
+        </section>
+
+        <section className="panel">
+          <div className="panel-header">
+            <div>
+              <h3>AI Summary</h3>
+              <p>AI assessment of this case (linked alerts + comments). Advisory only.</p>
+            </div>
+          </div>
+          <CaseAiSummaryPanel caseId={item.id} initial={aiSummary} />
         </section>
 
         <section className="panel">

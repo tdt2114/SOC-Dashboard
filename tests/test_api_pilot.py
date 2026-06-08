@@ -444,6 +444,115 @@ class PilotApiRegressionTests(unittest.TestCase):
         self.assertEqual(rejected.status, 200)
         self.assertEqual(rejected.json()["status"], "rejected")
 
+    def test_ai_alert_analysis(self) -> None:
+        alert = self.first_alert()
+        alert_id = alert["id"]
+        backend = self.backend_url
+
+        # viewer must not be able to run AI analysis
+        viewer_token, _ = self.login_as_role("viewer")
+        viewer_opener, _ = make_opener()
+        viewer_run = request(
+            viewer_opener,
+            "POST",
+            f"{backend}/api/alerts/{urllib.parse.quote(alert_id, safe='')}/ai-analyze",
+            bearer_token=viewer_token,
+        )
+        self.assertEqual(viewer_run.status, 403)
+
+        analyst_token, _ = self.login_as_role("analyst")
+        analyst_opener, _ = make_opener()
+        quoted = urllib.parse.quote(alert_id, safe="")
+
+        run = request(
+            analyst_opener,
+            "POST",
+            f"{backend}/api/alerts/{quoted}/ai-analyze",
+            bearer_token=analyst_token,
+        )
+        if run.status == 503:
+            self.skipTest("AI disabled (AI_ENABLED not set)")
+        self.assertEqual(run.status, 200, run.body)
+        body = run.json()
+        self.assertEqual(body["entity_type"], "alert")
+        self.assertEqual(body["entity_ref"], alert_id)
+        self.assertTrue(body["summary"])
+        self.assertIn(
+            body["recommended_action"],
+            ["block_ip", "isolate_host", "kill_process", "monitor", "none", None],
+        )
+
+        # cached read should now return the same analysis
+        cached = request(
+            analyst_opener,
+            "GET",
+            f"{backend}/api/alerts/{quoted}/ai-analysis",
+            bearer_token=analyst_token,
+        )
+        self.assertEqual(cached.status, 200)
+        self.assertEqual(cached.json()["id"], body["id"])
+
+    def test_ai_pending_action_and_case_summary(self) -> None:
+        soar_token = os.getenv("SOAR_WEBHOOK_TOKEN") or os.getenv("PILOT_TEST_SOAR_TOKEN")
+        if not soar_token:
+            self.skipTest("SOAR_WEBHOOK_TOKEN not set")
+
+        backend = self.backend_url
+        analyst_token, analyst_user = self.login_as_role("analyst")
+        analyst_opener, _ = make_opener()
+
+        # AI on a pending action (SOAR approval assist)
+        soar_opener, _ = make_opener()
+        created = request(
+            soar_opener,
+            "POST",
+            f"{backend}/api/actions",
+            payload={"action_type": "isolate-host", "target_agent_id": "001", "reason": "ai-2 regression"},
+            extra_headers={"X-SOAR-Token": soar_token},
+        )
+        self.assertEqual(created.status, 201)
+        token = created.json()["token"]
+
+        ai_action = request(
+            analyst_opener,
+            "POST",
+            f"{backend}/api/actions/{token}/ai-analyze",
+            bearer_token=analyst_token,
+        )
+        if ai_action.status == 503:
+            self.skipTest("AI disabled")
+        self.assertEqual(ai_action.status, 200, ai_action.body)
+        self.assertEqual(ai_action.json()["entity_type"], "pending_action")
+
+        # AI summary on a case
+        case = request(
+            analyst_opener,
+            "POST",
+            f"{backend}/api/cases",
+            payload={"title": f"ai-2 case {int(time.time())}", "status": "open", "severity": "medium"},
+            bearer_token=analyst_token,
+        )
+        self.assertEqual(case.status, 201)
+        case_id = case.json()["id"]
+        try:
+            ai_case = request(
+                analyst_opener,
+                "POST",
+                f"{backend}/api/cases/{case_id}/ai-summary",
+                bearer_token=analyst_token,
+            )
+            self.assertEqual(ai_case.status, 200, ai_case.body)
+            self.assertEqual(ai_case.json()["entity_type"], "case")
+            self.assertEqual(ai_case.json()["entity_ref"], str(case_id))
+        finally:
+            request(
+                analyst_opener,
+                "PATCH",
+                f"{backend}/api/cases/{case_id}",
+                payload={"status": "closed"},
+                bearer_token=analyst_token,
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -283,3 +283,20 @@ export interface PendingActionListResponse {
   items: PendingActionItem[];
   total: number;
 }
+
+export interface AiAnalysis {
+  id: number;
+  entity_type: string;
+  entity_ref: string;
+  model: string;
+  prompt_version: string;
+  summary: string;
+  attacker_intent: string | null;
+  mitre: string[] | null;
+  recommended_action: string | null;
+  should_block: boolean | null;
+  confidence: number | null;
+  created_by_user_id: number | null;
+  created_at: string;
+  updated_at: string;
+}

@@ -15,6 +15,7 @@ from app.schemas.actions import (
     PendingActionListResponse,
     PendingActionRejectRequest,
 )
+from app.schemas.ai import AiAnalysisResponse
 from app.services.actions import (
     APPROVAL_ROLES,
     approve_pending_action,
@@ -23,6 +24,7 @@ from app.services.actions import (
     list_pending_actions,
     reject_pending_action,
 )
+from app.services.ai_analyst import analyze_pending_action, get_cached_pending_action_analysis
 from app.services.auth import WORKFLOW_ROLES, get_current_user_model_from_token, require_user_roles
 
 router = APIRouter(prefix="/api/actions", tags=["actions"])
@@ -111,3 +113,24 @@ async def reject_action_route(
     )
     reason = payload.reason if payload else None
     return await reject_pending_action(session, current_user, token, reason)
+
+
+@router.post("/{token}/ai-analyze", response_model=AiAnalysisResponse)
+async def ai_analyze_action_route(
+    token: str,
+    force: bool = False,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    session: AsyncSession = Depends(get_db_session),
+) -> AiAnalysisResponse:
+    user = await _user_from_token(credentials, session, WORKFLOW_ROLES, "AI analysis requires analyst or admin access")
+    return await analyze_pending_action(session, user, token, force=force)
+
+
+@router.get("/{token}/ai-analysis", response_model=AiAnalysisResponse)
+async def ai_get_action_analysis_route(
+    token: str,
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    session: AsyncSession = Depends(get_db_session),
+) -> AiAnalysisResponse:
+    await _user_from_token(credentials, session, WORKFLOW_ROLES, "AI analysis requires analyst or admin access")
+    return await get_cached_pending_action_analysis(session, token)

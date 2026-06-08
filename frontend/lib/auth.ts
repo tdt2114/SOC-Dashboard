@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 
 import {
+  AiAnalysis,
   AlertBookmarkResponse,
   AlertWorkflowResponse,
   AuditLogListResponse,
@@ -246,6 +247,40 @@ export async function addAlertNoteAgainstBackend(
     method: "POST",
     body: JSON.stringify(payload)
   });
+}
+
+export async function getAlertAiAnalysisFromCookies(alertId: string): Promise<AiAnalysis | null> {
+  try {
+    return await authorizedJsonFetch<AiAnalysis>(`/api/alerts/${encodeURIComponent(alertId)}/ai-analysis`, {
+      method: "GET"
+    });
+  } catch {
+    return null; // 404 = no analysis yet
+  }
+}
+
+export async function runAlertAiAnalysisAgainstBackend(alertId: string): Promise<AiAnalysis> {
+  return authorizedJsonFetch<AiAnalysis>(`/api/alerts/${encodeURIComponent(alertId)}/ai-analyze`, {
+    method: "POST"
+  });
+}
+
+export async function runPendingActionAiAnalysisAgainstBackend(token: string): Promise<AiAnalysis> {
+  return authorizedJsonFetch<AiAnalysis>(`/api/actions/${encodeURIComponent(token)}/ai-analyze`, {
+    method: "POST"
+  });
+}
+
+export async function getCaseAiSummaryFromCookies(caseId: number): Promise<AiAnalysis | null> {
+  try {
+    return await authorizedJsonFetch<AiAnalysis>(`/api/cases/${caseId}/ai-summary`, { method: "GET" });
+  } catch {
+    return null; // 404 = no summary yet
+  }
+}
+
+export async function runCaseAiSummaryAgainstBackend(caseId: number): Promise<AiAnalysis> {
+  return authorizedJsonFetch<AiAnalysis>(`/api/cases/${caseId}/ai-summary`, { method: "POST" });
 }
 
 export async function getNotificationsFromCookies(): Promise<NotificationListResponse> {
