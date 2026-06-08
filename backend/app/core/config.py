@@ -134,6 +134,6 @@ def get_settings() -> Settings:
         soar_webhook_token=os.getenv("SOAR_WEBHOOK_TOKEN", ""),
         ai_enabled=_as_bool(os.getenv("AI_ENABLED"), default=False),
         gemini_api_key=os.getenv("GEMINI_API_KEY", ""),
-        ai_model=os.getenv("AI_MODEL", "gemini-1.5-flash"),
+        ai_model=os.getenv("AI_MODEL", "gemini-2.5-flash"),
         ai_timeout_seconds=float(os.getenv("AI_TIMEOUT_SECONDS", "20")),
     )

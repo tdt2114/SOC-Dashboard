@@ -58,6 +58,41 @@ active-response command of the same name. On approval the dashboard calls
 The result is stored on the action as `execution_status`
 (`success` / `failed` / `skipped`) and `execution_detail`.
 
+## Two ways to feed the loop
+
+The dashboard side (`/api/actions` → approve → Wazuh AR) is identical either way.
+What differs is how a Wazuh alert becomes a pending action:
+
+- **Option A — Direct Wazuh integration (`custom-actions`)**: the Wazuh manager
+  POSTs straight to `/api/actions`. No Shuffle needed, fully scripted, and is the
+  path validated end-to-end in this repo. **Recommended for this project.**
+- **Option B — Shuffle SOAR**: Wazuh forwards alerts to Shuffle, and a Shuffle
+  workflow POSTs to `/api/actions`. Use when you want SOAR orchestration/branching;
+  the workflow is configured in Shuffle's own UI.
+
+### Option A — Direct integration (recommended, validated)
+
+In `soc-wazuh-config`:
+
+1. `integrations/custom-actions` + `custom-actions.py` map high-severity rules to a
+   dashboard action (`100001-100004 → block-ip-iptables`, `100010-100013 →
+   isolate-host/kill-process`) and POST to `/api/actions` with `X-SOAR-Token`.
+2. `docker-compose.yml` mounts `./integrations/` into the manager (staged to
+   `/var/ossec/integrations/` with `750` perms by `10-runtime-bootstrap.sh`, because
+   `wazuh-integratord` refuses group/other-writable scripts).
+3. `wazuh/config/ossec.conf` enables the integration (scoped by `rule_id`):
+   ```xml
+   <integration>
+     <name>custom-actions</name>
+     <hook_url>http://host.docker.internal:8000/api/actions</hook_url>
+     <api_key>dev-soar-token-change-me</api_key>   <!-- must match SOAR_WEBHOOK_TOKEN -->
+     <rule_id>100001,100002,100003,100004,100010,100011,100012,100013</rule_id>
+     <alert_format>json</alert_format>
+   </integration>
+   ```
+4. Recreate the manager. A qualifying alert (e.g. brute-force rule `100001`) now
+   auto-creates a pending action visible on the linked case / actions list.
+
 ## Setup
 
 1. **Repo B `.env`**
@@ -67,13 +102,13 @@ The result is stored on the action as `execution_status`
      dispatch is `skipped` (the decision is still recorded).
    - Apply the migration: `docker compose exec soc-backend alembic upgrade head`.
 
-2. **Repo A — let Wazuh forward alerts to Shuffle**
+2. **Repo A — Option B only: forward alerts to Shuffle**
    Enable the `custom-shuffle` integration block in
    `soc-wazuh-config/wazuh/config/ossec.conf` and start Shuffle with the
    `soar` profile (`docker compose --profile soar up -d`), then restart the
-   manager.
+   manager. (Option A needs no Shuffle.)
 
-3. **Shuffle workflow**
+3. **Shuffle workflow (Option B)**
    Import [`shuffle-soc-approval-workflow.json`](./shuffle-soc-approval-workflow.json)
    as a starting point and set the variables described below.
 
